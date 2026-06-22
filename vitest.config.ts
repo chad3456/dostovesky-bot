@@ -18,6 +18,7 @@ export default defineConfig({
       NODE_ENV: "test",
       STORAGE_DIR: "./storage/test-books",
       AUTH_SECRET: "test-secret-test-secret-test-secret-0123",
+      ENABLE_TEST_LOGIN: "true",
     },
     environmentMatchGlobs: [["**/*.dom.test.{ts,tsx}", "jsdom"]],
     setupFiles: ["./tests/setup.ts"],

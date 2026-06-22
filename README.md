@@ -12,7 +12,13 @@ and [epub.js](https://github.com/futurepress/epub.js) for rendering.
 
 ## ✨ Features
 
-- **Google sign-in** (Auth.js / NextAuth v5) with a gated test-login for automation.
+- **Email sign-in (passwordless)** — enter your email, receive a 6-digit code,
+  and you're in. The code is hashed at rest, expires in 10 minutes, is rate-limited
+  and attempt-limited, and unifies sign-up with sign-in.
+- **Google sign-in** (Auth.js / NextAuth v5) as an optional alternative, plus a
+  gated test-login for automation.
+- **First-run onboarding** — new users are guided through a short wizard to set
+  their display name and initial reading preferences before reaching the library.
 - **Swift EPUB upload** with drag-and-drop; metadata (title, author, language,
   description) and the cover are extracted server-side on upload.
 - **Cross-device sync** — reading position, highlights and preferences live in the
@@ -60,9 +66,16 @@ cp .env.example .env        # then edit values
 ```
 
 Set at least `DATABASE_URL` and `AUTH_SECRET` (generate one with
-`openssl rand -base64 32`). To enable real Google sign-in, add `AUTH_GOOGLE_ID`
-and `AUTH_GOOGLE_SECRET` (see below). For local development without Google, set
-`ENABLE_TEST_LOGIN="true"` to use the demo email sign-in.
+`openssl rand -base64 32`).
+
+**Email sign-in** works out of the box: with no SMTP configured, the 6-digit
+code is printed to the server console (and, when `ENABLE_TEST_LOGIN="true"`,
+shown on the login page) so local development needs no mailbox. To deliver real
+emails, set `SMTP_HOST` / `EMAIL_FROM` (and optional `SMTP_USER` /
+`SMTP_PASSWORD`) — see `.env.example`.
+
+To enable **Google sign-in**, add `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`
+(see below).
 
 ### 3. Set up the database
 
@@ -117,10 +130,10 @@ pnpm test:e2e         # full browser flows (Playwright)
 
 ```
 prisma/schema.prisma         Data model (users, books, progress, highlights, prefs, shares)
-src/lib/                     auth, prisma, epub parsing, storage, validation, themes
-src/app/api/                 REST endpoints (books, progress, highlights, preferences, share)
-src/app/                     Pages: landing, login, library, read/[id], shared/[token]
-src/components/              UI: library, book card, share dialog, reader + panels
+src/lib/                     auth, otp, email, prisma, epub parsing, storage, validation, themes
+src/app/api/                 REST endpoints (auth/email, onboarding, books, progress, highlights, preferences, share)
+src/app/                     Pages: landing, login, onboarding, library, read/[id], shared/[token]
+src/components/              UI: login form, onboarding wizard, library, share dialog, reader + panels
 tests/unit                   Vitest unit tests
 tests/integration           Vitest API/route tests (real DB)
 tests/e2e                    Playwright end-to-end tests

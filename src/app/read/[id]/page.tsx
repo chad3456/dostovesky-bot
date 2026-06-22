@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { ReaderClient } from "@/components/reader/reader-client";
 
@@ -10,11 +10,12 @@ export default async function ReadPage({
 }: {
   params: { id: string };
 }) {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  if (!user.onboardedAt) redirect("/onboarding");
 
   const book = await prisma.book.findFirst({
-    where: { id: params.id, ownerId: session.user.id },
+    where: { id: params.id, ownerId: user.id },
     select: { id: true, title: true },
   });
   if (!book) notFound();

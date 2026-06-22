@@ -45,6 +45,23 @@ export const shareSchema = z.object({
   expiresInDays: z.number().int().min(1).max(365).nullable().optional(),
 });
 
+export const requestOtpSchema = z.object({
+  email: z.string().email().max(320),
+});
+
+export const verifyOtpSchema = z.object({
+  email: z.string().email().max(320),
+  code: z.string().regex(/^\d{6}$/, "Enter the 6-digit code"),
+});
+
+export const onboardingSchema = z.object({
+  name: z.string().min(1).max(80),
+  theme: z.enum(THEMES).optional(),
+  fontFamily: z.enum(FONT_FAMILIES).optional(),
+  fontSize: z.number().int().min(12).max(48).optional(),
+});
+
 export type ProgressInput = z.infer<typeof progressSchema>;
 export type CreateHighlightInput = z.infer<typeof createHighlightSchema>;
 export type PreferencesInput = z.infer<typeof preferencesSchema>;
+export type OnboardingInput = z.infer<typeof onboardingSchema>;

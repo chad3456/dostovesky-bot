@@ -11,6 +11,7 @@ export async function resetDb() {
     prisma.book.deleteMany(),
     prisma.session.deleteMany(),
     prisma.account.deleteMany(),
+    prisma.emailOtp.deleteMany(),
     prisma.user.deleteMany(),
   ]);
 }

@@ -27,11 +27,34 @@ function uniqueEmail() {
   return `reader_${Date.now()}_${Math.floor(Math.random() * 1e6)}@example.com`;
 }
 
-async function login(page: Page, email: string) {
+// Real email-OTP sign-in. In dev/test the code is surfaced on the page.
+async function signInByEmail(page: Page, email: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
-  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Send sign-in code" }).click();
+
+  const devOtp = page.getByTestId("dev-otp");
+  await expect(devOtp).toBeVisible({ timeout: 30_000 });
+  const code = ((await devOtp.textContent()) || "").match(/\d{6}/)?.[0];
+  if (!code) throw new Error("dev OTP code not found");
+
+  await page.getByLabel("6-digit code").fill(code);
+  await page.getByRole("button", { name: "Verify & continue" }).click();
+  await page.waitForURL("**/onboarding", { timeout: 30_000 });
+}
+
+async function completeOnboarding(page: Page) {
+  await page.getByRole("button", { name: "Continue" }).click(); // welcome
+  await page.getByLabel("Display name").fill("E2E Reader");
+  await page.getByRole("button", { name: "Continue" }).click(); // name
+  await page.getByRole("button", { name: "Start reading" }).click(); // prefs
   await page.waitForURL("**/library", { timeout: 30_000 });
+}
+
+// Sign in and get all the way to the library (onboarding completed).
+async function login(page: Page, email: string) {
+  await signInByEmail(page, email);
+  await completeOnboarding(page);
 }
 
 async function uploadBook(page: Page) {
@@ -54,6 +77,41 @@ test("landing page invites sign in", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: /Everywhere/i }),
   ).toBeVisible();
+});
+
+test("a new user signs in by email and is onboarded", async ({ page }) => {
+  await signInByEmail(page, uniqueEmail());
+
+  // Onboarding wizard greets the new user.
+  await expect(page.getByText("Welcome to Lumen")).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  await expect(page.getByText("What should we call you?")).toBeVisible();
+  await page.getByLabel("Display name").fill("Ada Lovelace");
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  await expect(page.getByText("How do you like to read?")).toBeVisible();
+  await page.getByRole("button", { name: "Sepia" }).click();
+  await page.getByRole("button", { name: "Large", exact: true }).click();
+  await page.getByRole("button", { name: "Start reading" }).click();
+
+  await page.waitForURL("**/library", { timeout: 30_000 });
+  await expect(page.getByText("Your Library")).toBeVisible();
+
+  // The chosen name shows in the account header.
+  await expect(page.getByText("Ada Lovelace")).toBeVisible();
+
+  // Returning to onboarding now bounces back to the library.
+  await page.goto("/onboarding");
+  await page.waitForURL("**/library", { timeout: 30_000 });
+});
+
+test("an un-onboarded user is redirected to onboarding", async ({ page }) => {
+  await signInByEmail(page, uniqueEmail());
+  // Trying to reach the library before onboarding redirects back.
+  await page.goto("/library");
+  await page.waitForURL("**/onboarding", { timeout: 30_000 });
+  await expect(page.getByText("Welcome to Lumen")).toBeVisible();
 });
 
 test("a reader can sign in, upload, and read a book", async ({ page }) => {

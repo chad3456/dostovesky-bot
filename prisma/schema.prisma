@@ -19,6 +19,8 @@ model User {
   emailVerified DateTime?
   image         String?
   createdAt     DateTime  @default(now())
+  // Null until the user finishes the first-run onboarding flow.
+  onboardedAt   DateTime?
 
   accounts    Account[]
   sessions    Session[]
@@ -62,6 +64,19 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// One-time passcodes for email sign-in. The plaintext code is never stored.
+model EmailOtp {
+  id         String    @id @default(cuid())
+  email      String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email])
 }
 
 // ---------- App models ----------

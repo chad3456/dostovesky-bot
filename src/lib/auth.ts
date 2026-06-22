@@ -3,8 +3,30 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import { verifyEmailOtp } from "@/lib/otp";
 
 const providers: NextAuthConfig["providers"] = [];
+
+// Email one-time passcode sign-in. The code is issued via
+// POST /api/auth/email/request and verified here.
+providers.push(
+  Credentials({
+    id: "email-otp",
+    name: "Email",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      code: { label: "Code", type: "text" },
+    },
+    async authorize(creds) {
+      const user = await verifyEmailOtp(
+        String(creds?.email || ""),
+        String(creds?.code || ""),
+      );
+      if (!user) return null;
+      return { id: user.id, email: user.email, name: user.name };
+    },
+  }),
+);
 
 // Real Google sign-in — only registered when credentials are configured.
 if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
