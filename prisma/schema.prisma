@@ -1,0 +1,162 @@
+// Lumen Reader — data model
+// Postgres + Prisma. Auth.js (NextAuth) standard tables plus app-specific models.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Auth.js tables ----------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  accounts    Account[]
+  sessions    Session[]
+  books       Book[]
+  highlights  Highlight[]
+  progress    ReadingProgress[]
+  preferences Preferences?
+  shareLinks  ShareLink[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------- App models ----------
+
+model Book {
+  id          String   @id @default(cuid())
+  ownerId     String
+  title       String
+  author      String?
+  language    String?
+  description String?  @db.Text
+  // Cover stored as a data URL (small) or null.
+  cover       String?  @db.Text
+  // Relative path on disk to the stored .epub file.
+  filePath    String
+  fileSize    Int
+  // Original uploaded filename.
+  fileName    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner      User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  highlights Highlight[]
+  progress   ReadingProgress[]
+  shareLinks ShareLink[]
+
+  @@index([ownerId])
+}
+
+model ReadingProgress {
+  id         String   @id @default(cuid())
+  userId     String
+  bookId     String
+  cfi        String?  @db.Text
+  percentage Float    @default(0)
+  // Human-readable location label (e.g. chapter title).
+  label      String?
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@index([bookId])
+}
+
+model Highlight {
+  id        String   @id @default(cuid())
+  userId    String
+  bookId    String
+  cfiRange  String   @db.Text
+  text      String   @db.Text
+  note      String?  @db.Text
+  color     String   @default("yellow")
+  chapter   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([bookId])
+  @@index([userId, bookId])
+}
+
+model Preferences {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  // light | sepia | dark | night | high-contrast
+  theme      String   @default("light")
+  // serif | sans | dyslexic
+  fontFamily String   @default("serif")
+  // px
+  fontSize   Int      @default(18)
+  lineHeight Float    @default(1.6)
+  // px margins
+  margin     Int      @default(24)
+  justify    Boolean  @default(true)
+  // paginated | scrolled
+  flow       String   @default("paginated")
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ShareLink {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  bookId    String
+  ownerId   String
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  book  Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([bookId])
+}

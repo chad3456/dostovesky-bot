@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/setup-db.sh >/tmp/lumen-db-setup.log 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}
