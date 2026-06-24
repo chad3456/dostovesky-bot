@@ -143,6 +143,9 @@ tests/e2e                    Playwright end-to-end tests
 
 ## 📦 Deployment notes
 
+- **Deploy to Vercel:** see [`DEPLOYMENT.md`](./DEPLOYMENT.md) for a step-by-step
+  guide (Vercel Blob for uploads + Postgres + Google sign-in). The repo's
+  `vercel-build` script runs `prisma migrate deploy` before building.
 - Run `pnpm build` (which runs `prisma generate` then `next build`) and
   `pnpm start`. Apply migrations on deploy with `pnpm prisma migrate deploy`.
 - `STORAGE_DIR` controls where uploaded EPUBs are written. For multi-instance
