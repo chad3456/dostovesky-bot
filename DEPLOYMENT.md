@@ -1,8 +1,43 @@
-# Deploying Lumen to Vercel
+# Deploying Lumen
 
-This guide gets a live, shareable instance running on **Vercel** with **Google
-sign-in**. The app is serverless-ready: uploaded EPUBs go to **Vercel Blob**
-(durable storage) and the database is **PostgreSQL**.
+There are two ways to ship this, depending on what you need.
+
+## Option A — Zero-backend, "device = account" (easiest) ⭐
+
+Deploy just the **client-side reader** (the home page `/`). Each device that
+visits the URL gets its **own library that lives in that browser** (IndexedDB
+for the EPUB files, local storage for highlights + reading position). No login,
+no database, no Blob, no Docker — and it's free.
+
+- ✅ One URL, open it on any phone/laptop/Mac.
+- ✅ The **device is the account**: come back in the same browser on the same
+  device and your books + last page + highlights are right where you left them.
+- ⚠️ Data is stored **in that browser only** — it does not sync between devices,
+  and clearing the browser's site data (or a different browser/incognito) starts
+  fresh. That's the trade-off for having no accounts/servers.
+
+**Deploy it (Vercel, ~2 minutes):**
+
+1. Push the repo to GitHub.
+2. On [vercel.com](https://vercel.com) → **Add New → Project** → import the repo.
+3. Framework preset: **Next.js**. **Don't set any environment variables.**
+4. **Deploy.** The build auto-skips database migrations when no `DATABASE_URL`
+   is present, so it succeeds with zero config.
+5. Open `https://<your-app>.vercel.app` → upload an EPUB → read.
+
+> This same build also works on Netlify, Cloudflare Pages, Render, etc. — it's a
+> standard Next.js app with no required env vars.
+
+> Want libraries that **follow you across devices** (true sync) instead of
+> per-device? That needs accounts + a server — use Option B.
+
+---
+
+## Option B — Full app: accounts + cross-device sync
+
+This gets a live instance with **Google sign-in**, where your library and
+highlights sync across every device you log in on. Uploaded EPUBs go to
+**Vercel Blob** and data lives in **PostgreSQL**.
 
 > Why Blob? Vercel's function filesystem is ephemeral, so the local on-disk
 > storage won't persist there. When `BLOB_READ_WRITE_TOKEN` is set, the app

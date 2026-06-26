@@ -298,6 +298,38 @@ export function ReaderClient({
 
       rendition.on("keyup", (e: KeyboardEvent) => handleKey(e));
 
+      // Swipe-to-turn inside the book content (touch devices, paginated only).
+      if (prefs.flow === "paginated") {
+        rendition.hooks.content.register((contents: any) => {
+          const doc: Document = contents.document;
+          let sx = 0;
+          let sy = 0;
+          doc.addEventListener(
+            "touchstart",
+            (e: TouchEvent) => {
+              const t = e.changedTouches[0];
+              sx = t.clientX;
+              sy = t.clientY;
+            },
+            { passive: true },
+          );
+          doc.addEventListener(
+            "touchend",
+            (e: TouchEvent) => {
+              const t = e.changedTouches[0];
+              const dx = t.clientX - sx;
+              const dy = t.clientY - sy;
+              if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+              const sel = contents.window?.getSelection?.();
+              if (sel && String(sel).length > 0) return; // selecting text
+              if (dx < 0) rendition.next();
+              else rendition.prev();
+            },
+            { passive: true },
+          );
+        });
+      }
+
       // Display at last known location.
       const startAt =
         currentCfiRef.current || initialCfiRef.current || undefined;
@@ -396,6 +428,26 @@ export function ReaderClient({
   // ---- navigation -------------------------------------------------------
   const next = useCallback(() => renditionRef.current?.next?.(), []);
   const prev = useCallback(() => renditionRef.current?.prev?.(), []);
+
+  // Swipe-to-turn for touch devices (paginated mode only). Ignored when the
+  // reader is scrolled, or when the gesture is mostly vertical, or when text
+  // is being selected.
+  const touchRef = useRef<{ x: number; y: number } | null>(null);
+  function onTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    touchRef.current = { x: t.clientX, y: t.clientY };
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    const start = touchRef.current;
+    touchRef.current = null;
+    if (!start || prefs.flow !== "paginated" || selection) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+    if (dx < 0) next();
+    else prev();
+  }
 
   const handleKey = useCallback(
     (e: KeyboardEvent) => {
@@ -564,7 +616,11 @@ export function ReaderClient({
       </header>
 
       {/* Reader stage */}
-      <div className="relative flex-1 overflow-hidden">
+      <div
+        className="relative flex-1 overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         {status === "error" ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
             <p className="text-lg font-medium">{errorMsg}</p>
