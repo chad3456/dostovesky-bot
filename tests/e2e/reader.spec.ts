@@ -72,11 +72,30 @@ function readerFrame(page: Page) {
   return page.frameLocator('[data-testid="epub-viewport"] iframe');
 }
 
-test("landing page invites sign in", async ({ page }) => {
+test("home is the no-login local reader", async ({ page }) => {
   await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Your Library" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Upload EPUB/ })).toBeVisible();
+});
+
+test("a book can be uploaded and read locally without signing in", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.setInputFiles('[data-testid="file-input"]', {
+    name: "local-odyssey.epub",
+    mimeType: "application/epub+zip",
+    buffer: epubBuffer,
+  });
+  // The uploaded book appears in the on-device library…
+  await expect(page.getByText("The E2E Odyssey").first()).toBeVisible({
+    timeout: 30_000,
+  });
+  // …and opens straight into the reader (no auth).
+  await page.getByText("The E2E Odyssey").first().click();
   await expect(
-    page.getByRole("heading", { name: /Everywhere/i }),
-  ).toBeVisible();
+    page.frameLocator('[data-testid="epub-viewport"] iframe').getByText("Chapter One"),
+  ).toBeVisible({ timeout: 30_000 });
 });
 
 test("a new user signs in by email and is onboarded", async ({ page }) => {

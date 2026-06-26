@@ -31,22 +31,53 @@ interface Selection {
   text: string;
 }
 
+// Small localStorage JSON helpers used by the no-server "local" reading mode.
+function lsGet<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+function lsSet(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* storage full or unavailable — non-fatal */
+  }
+}
+
 export interface ReaderClientProps {
   title: string;
-  // Endpoint that returns the raw EPUB bytes.
-  fileUrl: string;
+  // Endpoint that returns the raw EPUB bytes (server-backed reading).
+  fileUrl?: string;
+  // In-memory EPUB bytes (local, no-server reading).
+  data?: ArrayBuffer;
   // When provided, progress/highlights/preferences are synced to the server.
-  bookId: string | null;
-  // Read-only (shared) mode: no server writes, prefs persist locally.
+  bookId?: string | null;
+  // When provided, everything persists in localStorage under this key
+  // (fully client-side reading — no account, no database).
+  localKey?: string;
+  // Read-only (shared) mode: no writes, prefs persist locally.
   readOnly?: boolean;
+  // Optional in-app back handler; falls back to a link when omitted.
+  onBack?: () => void;
 }
 
 export function ReaderClient({
   title,
   fileUrl,
-  bookId,
+  data,
+  bookId = null,
+  localKey,
   readOnly = false,
+  onBack,
 }: ReaderClientProps) {
+  const local = Boolean(localKey);
+  // Highlighting is offered whenever changes can be persisted somewhere.
+  const canHighlight = !readOnly && (Boolean(bookId) || local);
   const viewerRef = useRef<HTMLDivElement>(null);
   const bookRef = useRef<any>(null);
   const renditionRef = useRef<any>(null);
@@ -75,8 +106,15 @@ export function ReaderClient({
   const progressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prefsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const progressKey = `lumen:progress:${localKey}`;
+  const highlightsKey = `lumen:highlights:${localKey}`;
+
   const saveProgress = useCallback(
     (cfi: string, pct: number, label: string | null) => {
+      if (local) {
+        lsSet(progressKey, { cfi, percentage: pct, label });
+        return;
+      }
       if (readOnly || !bookId) return;
       if (progressTimer.current) clearTimeout(progressTimer.current);
       progressTimer.current = setTimeout(() => {
@@ -86,15 +124,14 @@ export function ReaderClient({
         }).catch(() => {});
       }, 800);
     },
-    [bookId, readOnly],
+    [bookId, readOnly, local, progressKey],
   );
 
   const savePrefs = useCallback(
     (next: Preferences) => {
-      if (readOnly) {
-        try {
-          localStorage.setItem("lumen:prefs", JSON.stringify(next));
-        } catch {}
+      // Preferences are global to the reader and shared across books.
+      if (local || readOnly) {
+        lsSet("lumen:prefs", next);
         return;
       }
       if (prefsTimer.current) clearTimeout(prefsTimer.current);
@@ -105,7 +142,7 @@ export function ReaderClient({
         }).catch(() => {});
       }, 500);
     },
-    [readOnly],
+    [readOnly, local],
   );
 
   // ---- initial data load (prefs, progress, highlights, epub bytes) ------
@@ -115,9 +152,9 @@ export function ReaderClient({
     async function loadData() {
       // Preferences
       try {
-        if (readOnly) {
-          const raw = localStorage.getItem("lumen:prefs");
-          if (raw) setPrefs({ ...DEFAULT_PREFS, ...JSON.parse(raw) });
+        if (local || readOnly) {
+          const stored = lsGet<Partial<Preferences>>("lumen:prefs");
+          if (stored) setPrefs({ ...DEFAULT_PREFS, ...stored });
         } else {
           const d = await api<{ preferences: Preferences }>("/api/preferences");
           if (!cancelled) setPrefs({ ...DEFAULT_PREFS, ...d.preferences });
@@ -128,8 +165,13 @@ export function ReaderClient({
         prefsLoadedRef.current = true;
       }
 
-      // Progress + highlights (owner only)
-      if (!readOnly && bookId) {
+      // Progress + highlights
+      if (local) {
+        const p = lsGet<{ cfi: string | null }>(progressKey);
+        initialCfiRef.current = p?.cfi ?? null;
+        const hs = lsGet<Highlight[]>(highlightsKey);
+        if (hs && !cancelled) setHighlights(hs);
+      } else if (!readOnly && bookId) {
         try {
           const p = await api<{ progress: { cfi: string | null } | null }>(
             `/api/books/${bookId}/progress`,
@@ -144,11 +186,18 @@ export function ReaderClient({
         } catch {}
       }
 
-      // EPUB bytes
+      // EPUB bytes — from memory (local) or fetched from the server.
       try {
-        const res = await fetch(fileUrl);
-        if (!res.ok) throw new Error(`Failed to fetch book (${res.status})`);
-        const buf = await res.arrayBuffer();
+        let buf: ArrayBuffer;
+        if (data) {
+          buf = data;
+        } else if (fileUrl) {
+          const res = await fetch(fileUrl);
+          if (!res.ok) throw new Error(`Failed to fetch book (${res.status})`);
+          buf = await res.arrayBuffer();
+        } else {
+          throw new Error("No book source provided");
+        }
         if (!cancelled) {
           epubDataRef.current = buf;
           setDataReady(true);
@@ -376,27 +425,33 @@ export function ReaderClient({
   }
 
   async function createHighlight(color: string) {
-    if (!selection || readOnly || !bookId) {
+    if (!selection || !canHighlight) {
       clearSelection();
       return;
     }
     const { cfiRange, text } = selection;
     const chapter = locationLabel;
-    // Optimistic local highlight; reconcile with server id.
+    const now = new Date().toISOString();
     const optimistic: Highlight = {
-      id: `tmp-${Date.now()}`,
-      bookId,
+      id: local ? `loc-${crypto.randomUUID()}` : `tmp-${Date.now()}`,
+      bookId: bookId ?? localKey ?? "local",
       cfiRange,
       text,
       note: null,
       color,
       chapter,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
-    setHighlights((hs) => [...hs, optimistic]);
+    setHighlights((hs) => {
+      const nextHs = [...hs, optimistic];
+      if (local) lsSet(highlightsKey, nextHs);
+      return nextHs;
+    });
     addAnnotation(renditionRef.current, optimistic);
     clearSelection();
+
+    if (local) return; // persisted to localStorage above
 
     try {
       const d = await api<{ highlight: Highlight }>(
@@ -417,18 +472,24 @@ export function ReaderClient({
   }
 
   async function deleteHighlight(h: Highlight) {
-    setHighlights((hs) => hs.filter((x) => x.id !== h.id));
+    setHighlights((hs) => {
+      const nextHs = hs.filter((x) => x.id !== h.id);
+      if (local) lsSet(highlightsKey, nextHs);
+      return nextHs;
+    });
     removeAnnotation(renditionRef.current, h.cfiRange);
-    if (!readOnly && !h.id.startsWith("tmp-")) {
+    if (!local && !readOnly && !h.id.startsWith("tmp-")) {
       api(`/api/highlights/${h.id}`, { method: "DELETE" }).catch(() => {});
     }
   }
 
   async function updateNote(h: Highlight, note: string) {
-    setHighlights((hs) =>
-      hs.map((x) => (x.id === h.id ? { ...x, note } : x)),
-    );
-    if (!readOnly && !h.id.startsWith("tmp-")) {
+    setHighlights((hs) => {
+      const nextHs = hs.map((x) => (x.id === h.id ? { ...x, note } : x));
+      if (local) lsSet(highlightsKey, nextHs);
+      return nextHs;
+    });
+    if (!local && !readOnly && !h.id.startsWith("tmp-")) {
       api(`/api/highlights/${h.id}`, {
         method: "PATCH",
         body: JSON.stringify({ note }),
@@ -462,13 +523,24 @@ export function ReaderClient({
         className={`flex items-center justify-between gap-2 border-b px-3 py-2 ${theme.chrome}`}
       >
         <div className="flex items-center gap-1">
-          <Link
-            href="/library"
-            aria-label="Back to library"
-            className="rounded-lg px-2 py-1.5 text-sm hover:bg-black/10"
-          >
-            ←
-          </Link>
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Back to library"
+              className="rounded-lg px-2 py-1.5 text-sm hover:bg-black/10"
+            >
+              ←
+            </button>
+          ) : (
+            <Link
+              href={local || readOnly ? "/" : "/library"}
+              aria-label="Back to library"
+              className="rounded-lg px-2 py-1.5 text-sm hover:bg-black/10"
+            >
+              ←
+            </Link>
+          )}
           <ToolbarButton label="Contents" onClick={() => setPanel("contents")}>
             ☰
           </ToolbarButton>
@@ -588,7 +660,7 @@ export function ReaderClient({
                 onDelete={deleteHighlight}
                 onUpdateNote={updateNote}
                 onClose={() => setPanel(null)}
-                readOnly={readOnly}
+                readOnly={!canHighlight}
               />
             )}
           </aside>
@@ -602,7 +674,7 @@ export function ReaderClient({
           onHighlight={createHighlight}
           onCopy={copySelection}
           onDismiss={clearSelection}
-          readOnly={readOnly}
+          readOnly={!canHighlight}
         />
       )}
     </div>

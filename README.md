@@ -52,6 +52,21 @@ and [epub.js](https://github.com/futurepress/epub.js) for rendering.
 
 ## 🚀 Quick start
 
+### Option A — just read locally (no setup)
+
+Want to upload an EPUB and read it with **no database, no account, no Docker**?
+The home page (`/`) is a fully client-side reader: books are stored in your
+browser (IndexedDB) and reading settings + highlights in local storage.
+
+```bash
+pnpm install
+pnpm dev
+# open http://localhost:3000 → drag in an .epub → read
+```
+
+That's it. The sections below are only needed for the **full app** (Google/email
+sign-in and the cross-device synced library at `/library`).
+
 ### 1. Prerequisites
 
 - Node.js ≥ 20
