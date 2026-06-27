@@ -7,12 +7,14 @@ export function SelectionBar({
   text,
   onHighlight,
   onCopy,
+  onShare,
   onDismiss,
   readOnly,
 }: {
   text: string;
   onHighlight: (color: string) => void;
   onCopy: () => void;
+  onShare: () => void;
   onDismiss: () => void;
   readOnly: boolean;
 }) {
@@ -36,6 +38,13 @@ export function SelectionBar({
           </div>
         )}
 
+        <button
+          type="button"
+          onClick={onShare}
+          className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium hover:bg-white/20"
+        >
+          Share
+        </button>
         <button
           type="button"
           onClick={onCopy}

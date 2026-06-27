@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/fetcher";
 import type { Highlight, Preferences } from "@/lib/types";
@@ -13,6 +13,9 @@ import { SettingsPanel } from "@/components/reader/settings-panel";
 import { ContentsPanel, type TocItem } from "@/components/reader/contents-panel";
 import { HighlightsPanel } from "@/components/reader/highlights-panel";
 import { SelectionBar } from "@/components/reader/selection-bar";
+import { ListenBar } from "@/components/reader/listen-bar";
+import { useTts, type TtsEngine } from "@/components/reader/use-tts";
+import { shareQuoteImage } from "@/lib/share-image";
 
 const DEFAULT_PREFS: Preferences = {
   theme: "light",
@@ -51,6 +54,8 @@ function lsSet(key: string, value: unknown): void {
 
 export interface ReaderClientProps {
   title: string;
+  // Optional author, used for share cards.
+  author?: string | null;
   // Endpoint that returns the raw EPUB bytes (server-backed reading).
   fileUrl?: string;
   // In-memory EPUB bytes (local, no-server reading).
@@ -68,6 +73,7 @@ export interface ReaderClientProps {
 
 export function ReaderClient({
   title,
+  author = null,
   fileUrl,
   data,
   bookId = null,
@@ -468,6 +474,62 @@ export function ReaderClient({
     setPanel(null);
   }
 
+  // ---- listen (text-to-speech) ------------------------------------------
+  const ttsEngine = useMemo<TtsEngine>(
+    () => ({
+      getText: () => {
+        try {
+          const contents = renditionRef.current?.getContents?.() ?? [];
+          const body = contents[0]?.document?.body;
+          return body ? body.innerText || body.textContent || "" : "";
+        } catch {
+          return "";
+        }
+      },
+      advance: async () => {
+        try {
+          const r = renditionRef.current;
+          const book = bookRef.current;
+          const idx = r?.location?.start?.index;
+          const items = book?.spine?.spineItems ?? [];
+          const nextHref =
+            typeof idx === "number" ? items[idx + 1]?.href : undefined;
+          if (!nextHref) return false;
+          await r.display(nextHref);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+    }),
+    [],
+  );
+  const tts = useTts(ttsEngine);
+
+  function startListening() {
+    clearSelection();
+    setPanel(null);
+    tts.start();
+  }
+
+  // ---- share to story ---------------------------------------------------
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
+  async function shareSelection() {
+    if (!selection) return;
+    const quote = selection.text;
+    clearSelection();
+    try {
+      const result = await shareQuoteImage({ quote, title, author });
+      if (result === "downloaded") {
+        setShareMsg("Image saved — post it to your story 📸");
+        setTimeout(() => setShareMsg(null), 3500);
+      }
+    } catch {
+      setShareMsg("Couldn't create the share image.");
+      setTimeout(() => setShareMsg(null), 3500);
+    }
+  }
+
   // ---- highlights -------------------------------------------------------
   function clearSelection() {
     try {
@@ -603,6 +665,11 @@ export function ReaderClient({
         </h1>
 
         <div className="flex items-center gap-1">
+          {tts.supported && !tts.listening && (
+            <ToolbarButton label="Listen" onClick={startListening}>
+              🎧
+            </ToolbarButton>
+          )}
           <ToolbarButton
             label="Highlights"
             onClick={() => setPanel("highlights")}
@@ -729,9 +796,22 @@ export function ReaderClient({
           text={selection.text}
           onHighlight={createHighlight}
           onCopy={copySelection}
+          onShare={shareSelection}
           onDismiss={clearSelection}
           readOnly={!canHighlight}
         />
+      )}
+
+      {/* Listening controls */}
+      {tts.listening && <ListenBar tts={tts} />}
+
+      {/* Transient share message */}
+      {shareMsg && (
+        <div className="fixed inset-x-0 bottom-24 z-40 flex justify-center px-4">
+          <p className="rounded-full bg-slate-900/95 px-4 py-2 text-sm text-white shadow-lg">
+            {shareMsg}
+          </p>
+        </div>
       )}
     </div>
   );

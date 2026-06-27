@@ -24,6 +24,12 @@ and [epub.js](https://github.com/futurepress/epub.js) for rendering.
 - **Cross-device sync** — reading position, highlights and preferences live in the
   database and follow you to every device you sign in on.
 - **Highlights & notes** in five colors, with a dedicated highlights panel.
+- **Listen mode (read-aloud)** — hands-free, podcast-style playback using the
+  browser's speech engine, with play/pause and speed control; auto-advances
+  chapter to chapter. Great for driving or walking.
+- **Share to Stories** — turn a highlighted passage into a story-sized quote
+  card and open the device share sheet (Instagram, Messages, …); downloads the
+  image on desktop.
 - **Reading preferences for every age** — five themes (light, sepia, dark, night,
   high-contrast), three fonts including a **dyslexia-friendly** typeface, plus
   adjustable font size, line spacing, margins, justification and page/scroll layout.

@@ -92,6 +92,7 @@ export function LocalApp() {
     return (
       <ReaderClient
         title={reading.book.title}
+        author={reading.book.author}
         data={reading.data}
         localKey={reading.book.id}
         onBack={() => {
