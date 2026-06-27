@@ -68,6 +68,14 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// Durable EPUB file bytes stored in Postgres. Used as the file backend on
+// serverless hosts (e.g. Vercel + Supabase) when no object store is configured.
+model BookBlob {
+  id        String   @id @default(cuid())
+  data      Bytes
+  createdAt DateTime @default(now())
+}
+
 // One-time passcodes for email sign-in. The plaintext code is never stored.
 model EmailOtp {
   id         String    @id @default(cuid())
