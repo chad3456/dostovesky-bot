@@ -9,9 +9,11 @@ type Phase = "email" | "code";
 export function LoginForm({
   googleEnabled,
   testEnabled,
+  emailEnabled = true,
 }: {
   googleEnabled: boolean;
   testEnabled: boolean;
+  emailEnabled?: boolean;
 }) {
   const [phase, setPhase] = useState<Phase>("email");
   const [email, setEmail] = useState("");
@@ -221,12 +223,14 @@ export function LoginForm({
         </form>
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-slate-400">
-        <span className="h-px flex-1 bg-slate-200" /> or use email{" "}
-        <span className="h-px flex-1 bg-slate-200" />
-      </div>
+      {emailEnabled && (
+        <div className="flex items-center gap-3 text-xs text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" /> or use email{" "}
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
+      )}
 
-      {phase === "email" ? (
+      {emailEnabled && (phase === "email" ? (
         <form onSubmit={requestCode} className="space-y-3" aria-label="Email sign-in">
           <input
             type="email"
@@ -299,7 +303,7 @@ export function LoginForm({
             </p>
           )}
         </form>
-      )}
+      ))}
 
       {info && (
         <p role="status" className="text-center text-sm text-emerald-600">

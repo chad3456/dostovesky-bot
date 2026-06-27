@@ -77,6 +77,14 @@ export function useTts(engine: TtsEngine): TtsController {
 
       const utter = new SpeechSynthesisUtterance(queueRef.current[idxRef.current]);
       utter.rate = rateRef.current;
+      // Use a sensible default language/voice so engines that need one speak.
+      utter.lang =
+        (typeof navigator !== "undefined" && navigator.language) || "en-US";
+      const voices = s.getVoices();
+      const voice =
+        voices.find((v) => v.lang === utter.lang) ||
+        voices.find((v) => v.lang?.startsWith(utter.lang.slice(0, 2)));
+      if (voice) utter.voice = voice;
       utter.onend = () => {
         if (gen !== genRef.current) return;
         idxRef.current += 1;
@@ -96,6 +104,10 @@ export function useTts(engine: TtsEngine): TtsController {
     const s = synth();
     if (!s) return;
     s.cancel();
+    // Some engines get stuck in a paused state, or only populate voices after a
+    // first call — nudge both so the first utterance reliably speaks.
+    s.resume();
+    s.getVoices();
     const gen = ++genRef.current;
     queueRef.current = splitIntoSentences(cleanText(engine.getText()));
     idxRef.current = 0;
