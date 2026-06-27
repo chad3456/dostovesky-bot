@@ -21,6 +21,8 @@ model User {
   createdAt     DateTime  @default(now())
   // Null until the user finishes the first-run onboarding flow.
   onboardedAt   DateTime?
+  // Secret code for passwordless cross-device sign-in ("Sync Code").
+  syncCode      String?   @unique
 
   accounts    Account[]
   sessions    Session[]

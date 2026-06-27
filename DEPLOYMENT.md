@@ -33,15 +33,44 @@ no database, no Blob, no Docker — and it's free.
 
 ---
 
-## Option B — Full app: accounts + cross-device sync
+## Option B — Cross-device sync (recommended for Mac ↔ phone)
 
-This gets a live instance with **Google sign-in**, where your library and
-highlights sync across every device you log in on. Uploaded EPUBs go to
-**Vercel Blob** and data lives in **PostgreSQL**.
+Your library + highlights live on a server, so the **same books appear on every
+device**. Uploaded EPUBs go to **Vercel Blob** and data lives in **PostgreSQL**.
+
+You get to choose how devices identify themselves:
+
+- **Sync Code (no login, recommended).** Create a library and you get a secret
+  code like `GQSG-22CK-DBLA`. Enter that code on any other device (`/login` →
+  "Open" with the code) to open the exact same library. No email, no Google.
+  The code is your credential — find it again anytime from the account menu.
+- **Email or Google sign-in.** Standard accounts; same library wherever you log
+  in. Email needs SMTP to deliver codes; Google needs OAuth credentials.
 
 > Why Blob? Vercel's function filesystem is ephemeral, so the local on-disk
 > storage won't persist there. When `BLOB_READ_WRITE_TOKEN` is set, the app
 > automatically stores uploads in Vercel Blob instead — no code changes needed.
+
+> The Sync Code path needs **only** `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`,
+> `AUTH_SECRET` and `NEXTAUTH_URL` — no SMTP or Google setup required.
+
+### Redeploying after these changes
+
+The repo is connected to GitHub, so **every push auto-deploys**. To enable
+cross-device sync on an existing project:
+
+1. Vercel project → **Storage** → create a **Postgres** database. Copy its
+   pooled connection string into an env var named **`DATABASE_URL`**.
+2. Vercel project → **Storage** → create a **Blob** store (this sets
+   `BLOB_READ_WRITE_TOKEN` automatically).
+3. **Settings → Environment Variables**: add `AUTH_SECRET`
+   (`openssl rand -base64 32`) and `NEXTAUTH_URL=https://<your-app>.vercel.app`.
+4. **Deployments → ⋯ → Redeploy** (or push a commit). The build runs
+   `prisma migrate deploy` automatically because `DATABASE_URL` is now set,
+   creating the tables.
+5. Open `https://<your-app>.vercel.app/login` → **Create a new library** → save
+   the sync code → upload books. On your phone, go to the same `/login`, enter
+   the code, and your books are there.
 
 ---
 

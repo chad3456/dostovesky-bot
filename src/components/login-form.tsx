@@ -21,6 +21,61 @@ export function LoginForm({
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
+  // Sync Code (passwordless cross-device) state.
+  const [syncInput, setSyncInput] = useState("");
+  const [createdCode, setCreatedCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function createLibrary() {
+    setErr(null);
+    setLoading("sync-new");
+    try {
+      const { code } = await api<{ code: string }>("/api/sync/new", {
+        method: "POST",
+      });
+      const res = await signIn("sync-code", { code, redirect: false });
+      if (res?.error) throw new Error("sign-in failed");
+      setCreatedCode(code); // show it so the user can save/pair before leaving
+    } catch (e) {
+      setErr(
+        e instanceof ApiError ? e.message : "Couldn't create a library. Try again.",
+      );
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function openLibrary(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    if (syncInput.trim().length < 12) {
+      setErr("Enter your full sync code.");
+      return;
+    }
+    setLoading("sync-open");
+    const res = await signIn("sync-code", {
+      code: syncInput.trim(),
+      redirect: false,
+    });
+    if (res?.error) {
+      setErr("That sync code wasn't found. Check it and try again.");
+      setLoading(null);
+    } else {
+      window.location.href = "/library";
+    }
+  }
+
+  async function copyCreated() {
+    if (!createdCode) return;
+    try {
+      await navigator.clipboard.writeText(createdCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
+
   async function requestCode(e?: React.FormEvent) {
     e?.preventDefault();
     setErr(null);
@@ -94,8 +149,83 @@ export function LoginForm({
     }
   }
 
+  // After creating a library: show the code so the user can save it / pair
+  // another device before continuing.
+  if (createdCode) {
+    return (
+      <div className="mt-8 space-y-4 text-center">
+        <p className="text-sm text-slate-600">
+          Your library is ready. <strong>Save this sync code</strong> — enter it
+          on any other device to open the same books and highlights.
+        </p>
+        <div className="rounded-xl border-2 border-brand-200 bg-brand-50 px-4 py-4">
+          <p className="font-mono text-2xl font-bold tracking-wide text-brand-700">
+            {createdCode}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={copyCreated}
+          className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          {copied ? "Copied!" : "Copy code"}
+        </button>
+        <a
+          href="/library"
+          className="block w-full rounded-xl bg-brand-600 px-4 py-3 font-semibold text-white hover:bg-brand-700"
+        >
+          Continue to my library →
+        </a>
+        <p className="text-xs text-slate-400">
+          You can find this code again anytime from the account menu.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-8 space-y-4">
+      {/* Sync Code — passwordless, works across devices */}
+      <div className="rounded-xl border border-slate-200 p-4">
+        <p className="text-sm font-semibold text-slate-800">
+          📚 Read across devices
+        </p>
+        <p className="mt-0.5 text-xs text-slate-500">
+          No account needed. Create a library, then use its sync code on your
+          other devices.
+        </p>
+        <button
+          type="button"
+          onClick={createLibrary}
+          disabled={loading !== null}
+          className="mt-3 w-full rounded-xl bg-brand-600 px-4 py-3 font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
+        >
+          {loading === "sync-new" ? "Creating…" : "Create a new library"}
+        </button>
+        <form onSubmit={openLibrary} className="mt-3 flex gap-2" aria-label="Open with sync code">
+          <input
+            type="text"
+            placeholder="XXXX-XXXX-XXXX"
+            value={syncInput}
+            onChange={(e) => setSyncInput(e.target.value.toUpperCase())}
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2.5 font-mono text-sm uppercase tracking-wide text-slate-800 focus:border-brand-500"
+            aria-label="Sync code"
+          />
+          <button
+            type="submit"
+            disabled={loading !== null}
+            className="shrink-0 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+          >
+            {loading === "sync-open" ? "Opening…" : "Open"}
+          </button>
+        </form>
+      </div>
+
+      <div className="flex items-center gap-3 text-xs text-slate-400">
+        <span className="h-px flex-1 bg-slate-200" /> or use email{" "}
+        <span className="h-px flex-1 bg-slate-200" />
+      </div>
+
       {phase === "email" ? (
         <form onSubmit={requestCode} className="space-y-3" aria-label="Email sign-in">
           <input

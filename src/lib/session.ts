@@ -28,6 +28,7 @@ export interface CurrentUser {
   email: string | null;
   image: string | null;
   onboardedAt: Date | null;
+  syncCode: string | null;
 }
 
 /** Load the full current-user record (incl. onboarding status), or null. */
@@ -37,6 +38,13 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   if (!id) return null;
   return prisma.user.findUnique({
     where: { id },
-    select: { id: true, name: true, email: true, image: true, onboardedAt: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      onboardedAt: true,
+      syncCode: true,
+    },
   });
 }

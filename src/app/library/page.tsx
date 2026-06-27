@@ -16,6 +16,7 @@ export default async function LibraryPage() {
         name={user.name}
         email={user.email}
         image={user.image}
+        syncCode={user.syncCode}
       />
       <LibraryClient />
     </div>

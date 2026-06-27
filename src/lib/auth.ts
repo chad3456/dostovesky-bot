@@ -4,8 +4,24 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { verifyEmailOtp } from "@/lib/otp";
+import { findBySyncCode } from "@/lib/sync";
 
 const providers: NextAuthConfig["providers"] = [];
+
+// Passwordless cross-device sign-in via a secret "Sync Code". The library is
+// created (with its code) by POST /api/sync/new; this verifies the code.
+providers.push(
+  Credentials({
+    id: "sync-code",
+    name: "Sync Code",
+    credentials: { code: { label: "Sync Code", type: "text" } },
+    async authorize(creds) {
+      const user = await findBySyncCode(String(creds?.code || ""));
+      if (!user) return null;
+      return { id: user.id, name: user.name };
+    },
+  }),
+);
 
 // Email one-time passcode sign-in. The code is issued via
 // POST /api/auth/email/request and verified here.

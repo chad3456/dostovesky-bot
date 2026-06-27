@@ -8,13 +8,27 @@ export function AppHeader({
   name,
   email,
   image,
+  syncCode,
 }: {
   name: string | null;
   email: string | null;
   image: string | null;
+  syncCode?: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const initial = (name || email || "?").charAt(0).toUpperCase();
+
+  async function copyCode() {
+    if (!syncCode) return;
+    try {
+      await navigator.clipboard.writeText(syncCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
@@ -65,8 +79,35 @@ export function AppHeader({
               >
                 <div className="px-3 py-2 text-sm">
                   <p className="font-medium text-slate-800">{name || "Reader"}</p>
-                  <p className="truncate text-xs text-slate-500">{email}</p>
+                  <p className="truncate text-xs text-slate-500">
+                    {email || "Synced library"}
+                  </p>
                 </div>
+
+                {syncCode && (
+                  <>
+                    <hr className="my-1 border-slate-100" />
+                    <div className="px-3 py-2">
+                      <p className="text-xs font-medium text-slate-500">
+                        Your sync code
+                      </p>
+                      <p className="mt-1 font-mono text-sm tracking-wide text-slate-800">
+                        {syncCode}
+                      </p>
+                      <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                        Enter this on another device to open the same library.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={copyCode}
+                        className="mt-2 w-full rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700"
+                      >
+                        {copied ? "Copied!" : "Copy code"}
+                      </button>
+                    </div>
+                  </>
+                )}
+
                 <hr className="my-1 border-slate-100" />
                 <button
                   type="button"

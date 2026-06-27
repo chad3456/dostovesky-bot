@@ -131,14 +131,23 @@ export function LocalApp() {
             onChange={(e) => e.target.files && upload(e.target.files)}
             data-testid="file-input"
           />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
-          >
-            {uploading ? "Adding…" : "＋ Upload EPUB"}
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href="/login"
+              className="hidden rounded-full border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:inline-block"
+              title="Sync your library across devices with a sync code"
+            >
+              ☁️ Sync across devices
+            </a>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
+            >
+              {uploading ? "Adding…" : "＋ Upload EPUB"}
+            </button>
+          </div>
         </div>
       </header>
 
