@@ -1,7 +1,8 @@
-import { LocalApp } from "@/components/local/local-app";
+import { PublicLibrary } from "@/components/public/public-library";
 
-// Home is a fully client-side reader: upload an EPUB and read it — no account
-// or database required. (Sign-in and the synced library live under /library.)
+// Home is the shared public library: anyone with the URL sees every uploaded
+// EPUB and can add more. Reading position + highlights are kept per-device.
+// (Private synced library lives under /library; offline-only reader at /local.)
 export default function HomePage() {
-  return <LocalApp />;
+  return <PublicLibrary />;
 }
