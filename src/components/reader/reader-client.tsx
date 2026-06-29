@@ -13,6 +13,7 @@ import { SettingsPanel } from "@/components/reader/settings-panel";
 import { ContentsPanel, type TocItem } from "@/components/reader/contents-panel";
 import { HighlightsPanel } from "@/components/reader/highlights-panel";
 import { DiscoverPanel } from "@/components/reader/discover-panel";
+import { KnowledgeGraphPanel } from "@/components/reader/knowledge-graph-panel";
 import { SelectionBar } from "@/components/reader/selection-bar";
 import { ListenBar } from "@/components/reader/listen-bar";
 import { useTts, type TtsEngine } from "@/components/reader/use-tts";
@@ -28,7 +29,13 @@ const DEFAULT_PREFS: Preferences = {
   flow: "paginated",
 };
 
-type Panel = "settings" | "contents" | "highlights" | "discover" | null;
+type Panel =
+  | "settings"
+  | "contents"
+  | "highlights"
+  | "discover"
+  | "graph"
+  | null;
 
 interface Selection {
   cfiRange: string;
@@ -671,6 +678,9 @@ export function ReaderClient({
               🎧
             </ToolbarButton>
           )}
+          <ToolbarButton label="Chapter graph" onClick={() => setPanel("graph")}>
+            🕸️
+          </ToolbarButton>
           <ToolbarButton label="Discover" onClick={() => setPanel("discover")}>
             🧭
           </ToolbarButton>
@@ -794,6 +804,13 @@ export function ReaderClient({
               <DiscoverPanel
                 title={title}
                 author={author}
+                onClose={() => setPanel(null)}
+              />
+            )}
+            {panel === "graph" && (
+              <KnowledgeGraphPanel
+                getText={ttsEngine.getText}
+                chapterLabel={locationLabel}
                 onClose={() => setPanel(null)}
               />
             )}
