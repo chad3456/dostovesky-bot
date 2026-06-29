@@ -9,17 +9,28 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Antique bronze / aged gold — the app's vintage accent.
         brand: {
-          50: "#eef2ff",
-          100: "#e0e7ff",
-          200: "#c7d2fe",
-          300: "#a5b4fc",
-          400: "#818cf8",
-          500: "#6366f1",
-          600: "#4f46e5",
-          700: "#4338ca",
-          800: "#3730a3",
-          900: "#312e81",
+          50: "#f8f1e2",
+          100: "#efdfc2",
+          200: "#e0c693",
+          300: "#cfaa63",
+          400: "#bf9344",
+          500: "#a87c3a",
+          600: "#8a6330",
+          700: "#6d4d27",
+          800: "#573e21",
+          900: "#48341d",
+        },
+        parchment: {
+          DEFAULT: "#efe4cb",
+          light: "#faf3e0",
+          dark: "#e7d8b5",
+          border: "#c9b28a",
+        },
+        ink: {
+          DEFAULT: "#3b2f23",
+          soft: "#6b5b45",
         },
         sepia: {
           bg: "#f4ecd8",

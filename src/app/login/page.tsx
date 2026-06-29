@@ -20,18 +20,18 @@ export default async function LoginPage() {
     Boolean(process.env.SMTP_HOST && process.env.EMAIL_FROM) || testEnabled;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-50 to-white px-6">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
+    <main className="flex min-h-screen items-center justify-center px-6">
+      <div className="vintage-card w-full max-w-sm rounded-2xl p-8">
         <Link
           href="/"
-          className="mb-6 flex items-center justify-center gap-2 text-2xl font-bold text-brand-700"
+          className="mb-4 flex items-center justify-center gap-2 text-brand-800"
         >
-          <span aria-hidden>📖</span> Lumen
+          <span aria-hidden className="text-2xl">📖</span>
+          <span className="font-display text-5xl leading-none">Lumen</span>
         </Link>
-        <h1 className="text-center text-xl font-semibold text-slate-900">
-          Welcome back
-        </h1>
-        <p className="mt-1 text-center text-sm text-slate-500">
+        <h1 className="font-display text-center text-4xl text-ink">Welcome back</h1>
+        <hr className="vintage-rule mx-auto my-2 max-w-[12rem]" />
+        <p className="mt-1 text-center text-sm italic text-ink-soft">
           Sign in to open your library on every device.
         </p>
 

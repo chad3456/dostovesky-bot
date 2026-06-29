@@ -4,6 +4,10 @@
 
 :root {
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Period typefaces for the whole UI */
+  --font-old: "IM Fell English", "IM Fell DW Pica", Georgia, "Times New Roman",
+    serif;
+  --font-display: "Tangerine", "Pinyon Script", "Snell Roundhand", cursive;
 }
 
 html,
@@ -11,12 +15,49 @@ body {
   height: 100%;
 }
 
+/* Aged-parchment app surface + sepia ink + 17th-century printed type. */
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply antialiased;
+  color: #3b2f23;
+  font-family: var(--font-old);
+  background-color: #efe4cb;
+  background-image:
+    radial-gradient(circle at 50% -10%, rgba(0, 0, 0, 0.05), transparent 55%),
+    radial-gradient(circle at 0% 100%, rgba(120, 82, 48, 0.12), transparent 45%),
+    radial-gradient(circle at 100% 100%, rgba(120, 82, 48, 0.12), transparent 45%),
+    radial-gradient(circle at 50% 40%, rgba(239, 228, 203, 0) 60%, rgba(90, 60, 30, 0.1) 100%);
+  background-attachment: fixed;
 }
 
-.dark body {
-  @apply bg-slate-950 text-slate-100;
+/* Cursive display for wordmark + page titles (opt-in, so small UI headings
+   like the reader toolbar stay legible). */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+}
+
+/* Ornamental divider. */
+.vintage-rule {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(120, 82, 48, 0.5),
+    transparent
+  );
+}
+
+/* A framed parchment card with a double rule. */
+.vintage-card {
+  background-color: #faf3e0;
+  border: 1px solid #c9b28a;
+  box-shadow:
+    0 1px 0 #fffaf0 inset,
+    0 0 0 3px rgba(201, 178, 138, 0.25),
+    0 10px 30px rgba(60, 40, 20, 0.12);
 }
 
 /* Smooth, accessible focus rings */
@@ -30,10 +71,8 @@ body {
   height: 8px;
 }
 .scroll-thin::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-slate-300;
-}
-.dark .scroll-thin::-webkit-scrollbar-thumb {
-  @apply bg-slate-700;
+  background: rgba(120, 82, 48, 0.4);
+  border-radius: 9999px;
 }
 
 /* Reader surface fills available space */

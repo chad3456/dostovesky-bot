@@ -12,7 +12,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#4f46e5",
+  themeColor: "#8a6330",
 };
 
 export default function RootLayout({
@@ -22,6 +22,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        {/* Period typefaces for the whole UI (loaded at runtime, not via
+            next/font, to avoid build-time font fetching). */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Pinyon+Script&family=Tangerine:wght@400;700&display=swap"
+        />
+      </head>
       <body className="min-h-full">
         <Providers>{children}</Providers>
       </body>

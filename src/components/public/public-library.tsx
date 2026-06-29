@@ -87,7 +87,7 @@ export function PublicLibrary() {
 
   return (
     <main
-      className="min-h-[100dvh] bg-slate-50"
+      className="min-h-[100dvh]"
       onDragOver={(e) => {
         e.preventDefault();
         setDragging(true);
@@ -99,10 +99,11 @@ export function PublicLibrary() {
         if (e.dataTransfer?.files?.length) upload(e.dataTransfer.files);
       }}
     >
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-parchment-border bg-parchment-light/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2 text-lg font-bold text-brand-700">
-            <span aria-hidden>📖</span> Lumen
+          <div className="flex items-center gap-2 text-brand-800">
+            <span aria-hidden className="text-xl">📖</span>
+            <span className="font-display text-3xl leading-none">Lumen</span>
           </div>
           <input
             ref={inputRef}
@@ -125,8 +126,9 @@ export function PublicLibrary() {
       </header>
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold text-slate-900">Shared Library</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="font-display text-5xl text-ink sm:text-6xl">Shared Library</h1>
+        <hr className="vintage-rule my-2 max-w-xs" />
+        <p className="text-sm italic text-ink-soft">
           {books.length} book{books.length === 1 ? "" : "s"} · anyone with this
           link can read and add books
         </p>
@@ -155,7 +157,7 @@ export function PublicLibrary() {
                 onClick={() => setReading(b)}
                 className="group text-left"
               >
-                <div className="overflow-hidden rounded-xl bg-slate-200 shadow-sm ring-1 ring-slate-200 transition group-hover:shadow-md">
+                <div className="overflow-hidden rounded-md bg-parchment-dark shadow-md ring-1 ring-parchment-border transition group-hover:shadow-xl">
                   <div className="relative aspect-[2/3] w-full">
                     {b.cover ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -166,19 +168,19 @@ export function PublicLibrary() {
                         loading="lazy"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-500 to-indigo-700 p-3 text-center">
-                        <span className="line-clamp-4 text-sm font-semibold text-white">
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-600 to-brand-900 p-3 text-center">
+                        <span className="font-display line-clamp-4 text-xl leading-tight text-parchment-light">
                           {b.title}
                         </span>
                       </div>
                     )}
                   </div>
                 </div>
-                <p className="mt-2 line-clamp-2 text-sm font-medium leading-tight text-slate-800">
+                <p className="mt-2 line-clamp-2 text-sm font-medium leading-tight text-ink">
                   {b.title}
                 </p>
                 {b.author && (
-                  <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
+                  <p className="mt-0.5 line-clamp-1 text-xs italic text-ink-soft">
                     {b.author}
                   </p>
                 )}
@@ -226,14 +228,12 @@ function GridSkeleton() {
 
 function EmptyState({ onUpload }: { onUpload: () => void }) {
   return (
-    <div className="mt-16 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+    <div className="vintage-card mt-16 flex flex-col items-center justify-center rounded-xl px-6 py-16 text-center">
       <div className="text-5xl" aria-hidden>
         📚
       </div>
-      <h2 className="mt-4 text-lg font-semibold text-slate-800">
-        No books yet
-      </h2>
-      <p className="mt-1 max-w-sm text-sm text-slate-500">
+      <h2 className="font-display mt-4 text-4xl text-ink">No books yet</h2>
+      <p className="mt-1 max-w-sm text-sm italic text-ink-soft">
         Upload an EPUB and it will be available to everyone who opens this link.
         Drag a file anywhere, or use the button.
       </p>
