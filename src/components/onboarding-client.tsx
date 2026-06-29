@@ -8,7 +8,9 @@ import { READER_THEMES } from "@/lib/reader-themes";
 const FONTS = [
   { id: "serif", label: "Serif" },
   { id: "sans", label: "Sans" },
-  { id: "dyslexic", label: "Dyslexia-friendly" },
+  { id: "dyslexic", label: "Dyslexic" },
+  { id: "oldstyle", label: "1700s print" },
+  { id: "cursive", label: "Handwritten" },
 ];
 
 const SIZES = [

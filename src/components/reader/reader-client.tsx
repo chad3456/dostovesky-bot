@@ -312,6 +312,22 @@ export function ReaderClient({
 
       rendition.on("keyup", (e: KeyboardEvent) => handleKey(e));
 
+      // Make period typefaces (IM Fell English, Tangerine, Pinyon Script)
+      // available inside the book's iframe document.
+      rendition.hooks.content.register((contents: any) => {
+        try {
+          const head = contents.document?.head;
+          if (head && !head.querySelector("link[data-lumen-fonts]")) {
+            const link = contents.document.createElement("link");
+            link.rel = "stylesheet";
+            link.setAttribute("data-lumen-fonts", "1");
+            link.href =
+              "https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Pinyon+Script&family=Tangerine:wght@400;700&display=swap";
+            head.appendChild(link);
+          }
+        } catch {}
+      });
+
       // Swipe-to-turn inside the book content (touch devices, paginated only).
       if (prefs.flow === "paginated") {
         rendition.hooks.content.register((contents: any) => {
@@ -440,8 +456,27 @@ export function ReaderClient({
   );
 
   // ---- navigation -------------------------------------------------------
-  const next = useCallback(() => renditionRef.current?.next?.(), []);
-  const prev = useCallback(() => renditionRef.current?.prev?.(), []);
+  // Vintage page-turn flourish.
+  const [flip, setFlip] = useState<"next" | "prev" | null>(null);
+  const flipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerFlip = useCallback(
+    (dir: "next" | "prev") => {
+      if (prefs.theme !== "vintage" || prefs.flow !== "paginated") return;
+      if (flipTimer.current) clearTimeout(flipTimer.current);
+      setFlip(dir);
+      flipTimer.current = setTimeout(() => setFlip(null), 600);
+    },
+    [prefs.theme, prefs.flow],
+  );
+
+  const next = useCallback(() => {
+    triggerFlip("next");
+    renditionRef.current?.next?.();
+  }, [triggerFlip]);
+  const prev = useCallback(() => {
+    triggerFlip("prev");
+    renditionRef.current?.prev?.();
+  }, [triggerFlip]);
 
   // Swipe-to-turn for touch devices (paginated mode only). Ignored when the
   // reader is scrolled, or when the gesture is mostly vertical, or when text
@@ -733,6 +768,15 @@ export function ReaderClient({
             >
               <div ref={viewerRef} className="reader-viewport" data-testid="epub-viewport" />
             </div>
+
+            {/* Vintage page-turn flourish */}
+            {flip && (
+              <div
+                className={`page-flip page-flip-${flip}`}
+                aria-hidden
+                onAnimationEnd={() => setFlip(null)}
+              />
+            )}
 
             {/* Page navigation (paginated) */}
             {prefs.flow === "paginated" && status === "ready" && (

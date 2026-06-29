@@ -54,6 +54,16 @@ export const READER_THEMES: Record<string, ReaderTheme> = {
     link: "#ffff00",
     chrome: "bg-black text-white border-white",
   },
+  vintage: {
+    id: "vintage",
+    label: "Vintage",
+    // Aged parchment + sepia ink; a layered paper texture is added in
+    // buildEpubThemeRules so old books really feel old.
+    background: "#e8dcc0",
+    color: "#3b2f23",
+    link: "#7a5230",
+    chrome: "bg-[#e8dcc0] text-[#3b2f23] border-[#c9b28a]",
+  },
 };
 
 export const FONT_STACKS: Record<string, string> = {
@@ -61,6 +71,15 @@ export const FONT_STACKS: Record<string, string> = {
   sans: '-apple-system, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   dyslexic:
     '"OpenDyslexic", "Comic Sans MS", "Trebuchet MS", Verdana, sans-serif',
+  // A genuine 17th/18th-century printed typeface (revived by Igino Marini).
+  oldstyle: '"IM Fell English", "IM Fell DW Pica", Georgia, "Times New Roman", serif',
+  // 1700s-style handwritten cursive.
+  cursive: '"Tangerine", "Pinyon Script", "Snell Roundhand", cursive',
+};
+
+// Fonts that read small and need extra size/leading to stay legible.
+export const FONT_SCALE: Record<string, number> = {
+  cursive: 1.6,
 };
 
 export const HIGHLIGHT_FILL: Record<string, string> = {
@@ -75,6 +94,14 @@ export const HIGHLIGHT_FILL: Record<string, string> = {
  * Build the epub.js theme rules object for a given set of preferences.
  * Returned shape matches what `rendition.themes.register(name, rules)` expects.
  */
+// Layered CSS that makes the parchment look aged (no image asset needed).
+const PARCHMENT_BG =
+  "#e8dcc0 " +
+  "radial-gradient(circle at 50% -10%, rgba(0,0,0,0.05), transparent 55%), " +
+  "radial-gradient(circle at 0% 100%, rgba(120,82,48,0.12), transparent 45%), " +
+  "radial-gradient(circle at 100% 100%, rgba(120,82,48,0.12), transparent 45%), " +
+  "radial-gradient(circle at 50% 50%, rgba(232,220,192,0) 60%, rgba(90,60,30,0.10) 100%)";
+
 export function buildEpubThemeRules(opts: {
   themeId: string;
   fontFamily: string;
@@ -84,12 +111,15 @@ export function buildEpubThemeRules(opts: {
 }): Record<string, Record<string, string>> {
   const theme = READER_THEMES[opts.themeId] ?? READER_THEMES.light;
   const font = FONT_STACKS[opts.fontFamily] ?? FONT_STACKS.serif;
-  return {
+  const isVintage = theme.id === "vintage";
+  const size = Math.round(opts.fontSize * (FONT_SCALE[opts.fontFamily] ?? 1));
+
+  const rules: Record<string, Record<string, string>> = {
     body: {
-      background: `${theme.background} !important`,
+      background: `${isVintage ? PARCHMENT_BG : theme.background} !important`,
       color: `${theme.color} !important`,
       "font-family": `${font} !important`,
-      "font-size": `${opts.fontSize}px !important`,
+      "font-size": `${size}px !important`,
       "line-height": `${opts.lineHeight} !important`,
       "text-align": opts.justify ? "justify !important" : "left !important",
       padding: "0 !important",
@@ -104,4 +134,18 @@ export function buildEpubThemeRules(opts: {
     img: { "max-width": "100% !important", height: "auto !important" },
     "::selection": { background: "rgba(99,102,241,0.35)" },
   };
+
+  if (isVintage) {
+    // Decorative drop-cap on the opening paragraph of each page.
+    rules["p:first-of-type::first-letter"] = {
+      "font-size": "3.1em !important",
+      "line-height": "0.8 !important",
+      float: "left !important",
+      "padding-right": "0.08em !important",
+      color: "#6b4423 !important",
+      "font-family": `${FONT_STACKS.oldstyle} !important`,
+    };
+  }
+
+  return rules;
 }

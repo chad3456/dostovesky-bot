@@ -42,9 +42,58 @@ body {
   height: 100%;
 }
 
+/* Vintage page-turn: a parchment-shaded sheet sweeps across with a soft shadow,
+   evoking flipping an old book page. Purely decorative (no pointer events). */
+.page-flip {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  transform-origin: left center;
+  background:
+    linear-gradient(
+      to right,
+      rgba(60, 40, 20, 0) 0%,
+      rgba(120, 90, 50, 0.18) 45%,
+      rgba(232, 220, 192, 0.55) 60%,
+      rgba(232, 220, 192, 0.95) 100%
+    );
+  box-shadow: -18px 0 30px rgba(60, 40, 20, 0.25);
+}
+.page-flip-next {
+  animation: page-flip-next 0.55s ease-in forwards;
+}
+.page-flip-prev {
+  transform-origin: right center;
+  animation: page-flip-prev 0.55s ease-in forwards;
+}
+@keyframes page-flip-next {
+  0% {
+    transform: perspective(1600px) rotateY(0deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: perspective(1600px) rotateY(-100deg);
+    opacity: 0;
+  }
+}
+@keyframes page-flip-prev {
+  0% {
+    transform: perspective(1600px) rotateY(0deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: perspective(1600px) rotateY(100deg);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
+  }
+  .page-flip {
+    display: none;
   }
 }

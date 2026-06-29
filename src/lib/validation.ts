@@ -27,8 +27,21 @@ export const updateHighlightSchema = z.object({
   note: z.string().max(10000).nullable().optional(),
 });
 
-export const THEMES = ["light", "sepia", "dark", "night", "high-contrast"] as const;
-export const FONT_FAMILIES = ["serif", "sans", "dyslexic"] as const;
+export const THEMES = [
+  "light",
+  "sepia",
+  "dark",
+  "night",
+  "high-contrast",
+  "vintage",
+] as const;
+export const FONT_FAMILIES = [
+  "serif",
+  "sans",
+  "dyslexic",
+  "oldstyle",
+  "cursive",
+] as const;
 export const FLOWS = ["paginated", "scrolled"] as const;
 
 export const preferencesSchema = z.object({

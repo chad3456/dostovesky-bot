@@ -51,4 +51,31 @@ describe("buildEpubThemeRules", () => {
       expect(HIGHLIGHT_FILL[c]).toMatch(/^#/);
     }
   });
+
+  it("gives the vintage theme an aged-paper background and a drop-cap", () => {
+    const rules = buildEpubThemeRules({
+      themeId: "vintage",
+      fontFamily: "oldstyle",
+      fontSize: 18,
+      lineHeight: 1.6,
+      justify: true,
+    });
+    // Layered gradients (parchment texture), not a flat color.
+    expect(rules.body.background).toContain("gradient");
+    expect(rules.body["font-family"]).toContain("IM Fell English");
+    expect(rules["p:first-of-type::first-letter"]).toBeTruthy();
+  });
+
+  it("scales up small cursive type for legibility", () => {
+    const rules = buildEpubThemeRules({
+      themeId: "vintage",
+      fontFamily: "cursive",
+      fontSize: 20,
+      lineHeight: 1.6,
+      justify: false,
+    });
+    // 20 * 1.6 scale = 32px
+    expect(rules.body["font-size"]).toContain("32px");
+    expect(rules.body["font-family"]).toContain("Tangerine");
+  });
 });
