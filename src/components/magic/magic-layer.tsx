@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Footprints } from "@/components/magic/footprints";
 import { SortingHatGuide } from "@/components/magic/sorting-hat-guide";
 import { MaraudersMap } from "@/components/magic/marauders-map";
+import { MusicToggle } from "@/components/magic/music-toggle";
 
 // Three.js loads only when the magic is actually on.
 const MagicDust = dynamic(
@@ -63,6 +64,8 @@ export function MagicLayer() {
       >
         {enabled ? "🪄 Mischief managed" : "✨ I solemnly swear…"}
       </button>
+
+      <MusicToggle />
     </>
   );
 }
