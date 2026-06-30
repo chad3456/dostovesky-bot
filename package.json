@@ -27,12 +27,14 @@
     "@vercel/blob": "^0.27.0",
     "epubjs": "^0.3.93",
     "fast-xml-parser": "^4.5.0",
+    "gsap": "^3.15.0",
     "jszip": "^3.10.1",
     "next": "14.2.18",
-    "nodemailer": "^6.9.16",
     "next-auth": "5.0.0-beta.25",
+    "nodemailer": "^6.9.16",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "three": "^0.185.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -44,6 +46,7 @@
     "@types/nodemailer": "^6.4.16",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/three": "^0.185.0",
     "@vitejs/plugin-react": "^4.3.3",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
@@ -59,6 +62,11 @@
     "node": ">=20"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["@prisma/client", "@prisma/engines", "prisma", "esbuild"]
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "esbuild"
+    ]
   }
 }

@@ -2,8 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { api, ApiError } from "@/lib/fetcher";
 import { ReaderClient } from "@/components/reader/reader-client";
+
+// The Marauder's-Map magic layer (GSAP + Three.js) is client-only and lazy.
+const MagicLayer = dynamic(
+  () => import("@/components/magic/magic-layer").then((m) => m.MagicLayer),
+  { ssr: false },
+);
 
 interface PublicBook {
   id: string;
@@ -289,6 +296,8 @@ export function PublicLibrary() {
           </div>
         </div>
       )}
+
+      <MagicLayer />
     </main>
   );
 }
