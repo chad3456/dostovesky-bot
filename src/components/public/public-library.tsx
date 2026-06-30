@@ -125,8 +125,76 @@ export function PublicLibrary() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <h1 className="font-display text-5xl text-ink sm:text-6xl">Shared Library</h1>
+      {/* ───────── Hero ───────── */}
+      <section className="relative mx-auto max-w-5xl px-6 pb-10 pt-20 text-center sm:pt-28">
+        <p
+          className="reveal-up text-xs font-semibold uppercase tracking-[0.35em] text-brand-700"
+          style={{ animationDelay: "0.05s" }}
+        >
+          Est. MMXXV · A Digital Reading Room
+        </p>
+        <h1
+          className="reveal-up font-display mt-4 text-6xl leading-[0.95] text-ink sm:text-8xl"
+          style={{ animationDelay: "0.15s" }}
+        >
+          Read like it&apos;s 1789.
+        </h1>
+        <p
+          className="reveal-up mx-auto mt-6 max-w-xl text-lg italic leading-relaxed text-ink-soft"
+          style={{ animationDelay: "0.3s" }}
+        >
+          A quiet, beautiful library for your books — with listening, highlights,
+          and the soul of an old paper edition.
+        </p>
+        <div
+          className="reveal-up mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
+          style={{ animationDelay: "0.45s" }}
+        >
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="rounded-full bg-brand-700 px-8 py-3 text-base font-semibold text-parchment-light shadow-lg shadow-brand-900/20 transition hover:-translate-y-0.5 hover:bg-brand-800 disabled:opacity-60"
+          >
+            {uploading ? "Adding…" : "Upload a book"}
+          </button>
+          <a
+            href="#shelves"
+            className="rounded-full border border-brand-700/40 px-8 py-3 text-base font-semibold text-brand-800 transition hover:-translate-y-0.5 hover:bg-brand-700/5"
+          >
+            Browse the shelves ↓
+          </a>
+        </div>
+        <hr className="vintage-rule mx-auto mt-12 max-w-md" />
+      </section>
+
+      {/* ───────── Kinetic marquee ───────── */}
+      <div className="marquee border-y border-parchment-border/70 py-3 text-brand-800/70">
+        <div className="marquee__track font-display text-3xl">
+          {Array.from({ length: 2 }).map((_, k) => (
+            <span key={k}>
+              {[
+                "Philosophy",
+                "Poetry",
+                "History",
+                "Essays",
+                "Fiction",
+                "Memoir",
+                "Science",
+                "Letters",
+              ].map((w) => (
+                <span key={w} className="mx-6">
+                  {w} <span className="text-brand-500">✦</span>
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ───────── Shelves ───────── */}
+      <div id="shelves" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <h2 className="font-display text-4xl text-ink sm:text-5xl">The Shelves</h2>
         <hr className="vintage-rule my-2 max-w-xs" />
         <p className="text-sm italic text-ink-soft">
           {books.length} book{books.length === 1 ? "" : "s"} · anyone with this
@@ -157,7 +225,7 @@ export function PublicLibrary() {
                 onClick={() => setReading(b)}
                 className="group text-left"
               >
-                <div className="overflow-hidden rounded-md bg-parchment-dark shadow-md ring-1 ring-parchment-border transition group-hover:shadow-xl">
+                <div className="overflow-hidden rounded-md bg-parchment-dark shadow-md ring-1 ring-parchment-border transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-2xl">
                   <div className="relative aspect-[2/3] w-full">
                     {b.cover ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -189,18 +257,30 @@ export function PublicLibrary() {
           </div>
         )}
 
-        <p className="mt-10 text-center text-xs text-slate-400">
-          Books here are public to anyone with the link. Prefer a private library?{" "}
-          <Link href="/login" className="underline hover:text-slate-600">
-            Use a sync code
-          </Link>{" "}
-          or{" "}
-          <Link href="/local" className="underline hover:text-slate-600">
-            read on this device only
-          </Link>
-          .
-        </p>
       </div>
+
+      {/* ───────── Footer ───────── */}
+      <footer className="mt-10 border-t border-parchment-border bg-parchment-light/60">
+        <div className="mx-auto max-w-6xl px-6 py-12 text-center">
+          <p className="font-display text-5xl text-brand-800">Lumen</p>
+          <p className="mx-auto mt-2 max-w-md text-sm italic text-ink-soft">
+            Books here are public to anyone with the link. Prefer a private
+            library?{" "}
+            <Link href="/login" className="underline decoration-brand-400 hover:text-brand-800">
+              use a sync code
+            </Link>{" "}
+            or{" "}
+            <Link href="/local" className="underline decoration-brand-400 hover:text-brand-800">
+              read on this device only
+            </Link>
+            .
+          </p>
+          <hr className="vintage-rule mx-auto my-6 max-w-xs" />
+          <p className="text-xs uppercase tracking-[0.3em] text-ink-soft/70">
+            A reading room for the curious · {new Date().getFullYear()}
+          </p>
+        </div>
+      </footer>
 
       {dragging && (
         <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-brand-600/10 backdrop-blur-sm">

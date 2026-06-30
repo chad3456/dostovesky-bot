@@ -39,6 +39,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full">
         <Providers>{children}</Providers>
+        <div className="grain" aria-hidden />
       </body>
     </html>
   );
