@@ -75,11 +75,15 @@ export const FONT_STACKS: Record<string, string> = {
   oldstyle: '"IM Fell English", "IM Fell DW Pica", Georgia, "Times New Roman", serif',
   // 1700s-style handwritten cursive.
   cursive: '"Tangerine", "Pinyon Script", "Snell Roundhand", cursive',
+  // Casual marker-pen handwriting (bouncy, friendly print lettering).
+  handwritten:
+    '"Gochi Hand", "Patrick Hand", "Segoe Print", "Comic Sans MS", cursive',
 };
 
 // Fonts that read small and need extra size/leading to stay legible.
 export const FONT_SCALE: Record<string, number> = {
   cursive: 1.6,
+  handwritten: 1.15,
 };
 
 export const HIGHLIGHT_FILL: Record<string, string> = {

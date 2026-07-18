@@ -52,4 +52,10 @@ describe("preferencesSchema", () => {
   it("rejects unknown themes", () => {
     expect(() => preferencesSchema.parse({ theme: "neon" })).toThrow();
   });
+
+  it("accepts the handwritten font family", () => {
+    expect(
+      preferencesSchema.parse({ fontFamily: "handwritten" }).fontFamily,
+    ).toBe("handwritten");
+  });
 });

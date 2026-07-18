@@ -34,7 +34,7 @@ export default function RootLayout({
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Pinyon+Script&family=Tangerine:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Pinyon+Script&family=Tangerine:wght@400;700&family=Gochi+Hand&family=Patrick+Hand&display=swap"
         />
       </head>
       <body className="min-h-full">

@@ -41,6 +41,7 @@ export const FONT_FAMILIES = [
   "dyslexic",
   "oldstyle",
   "cursive",
+  "handwritten",
 ] as const;
 export const FLOWS = ["paginated", "scrolled"] as const;
 

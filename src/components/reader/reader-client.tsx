@@ -16,6 +16,7 @@ import { DiscoverPanel } from "@/components/reader/discover-panel";
 import { KnowledgeGraphPanel } from "@/components/reader/knowledge-graph-panel";
 import { SelectionBar } from "@/components/reader/selection-bar";
 import { ListenBar } from "@/components/reader/listen-bar";
+import { EndScene } from "@/components/reader/end-scene";
 import { useTts, type TtsEngine } from "@/components/reader/use-tts";
 import { shareQuoteImage } from "@/lib/share-image";
 
@@ -113,6 +114,9 @@ export function ReaderClient({
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [dataReady, setDataReady] = useState(false);
+  // End-of-book celebration scene (shown once per arrival at the final page).
+  const [endScene, setEndScene] = useState(false);
+  const endDismissedRef = useRef(false);
 
   highlightsRef.current = highlights;
 
@@ -292,6 +296,11 @@ export function ReaderClient({
         const label = labelForHref(book, location?.start?.href);
         setLocationLabel(label);
         saveProgress(cfi, pct, label);
+
+        // Reached the final page → show the end scene (until dismissed).
+        const isEnd = Boolean(location?.atEnd);
+        if (isEnd && !endDismissedRef.current) setEndScene(true);
+        else if (!isEnd) endDismissedRef.current = false;
       });
 
       rendition.on("selected", (cfiRange: string, contents: any) => {
@@ -322,7 +331,7 @@ export function ReaderClient({
             link.rel = "stylesheet";
             link.setAttribute("data-lumen-fonts", "1");
             link.href =
-              "https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Pinyon+Script&family=Tangerine:wght@400;700&display=swap";
+              "https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Pinyon+Script&family=Tangerine:wght@400;700&family=Gochi+Hand&family=Patrick+Hand&display=swap";
             head.appendChild(link);
           }
         } catch {}
@@ -784,6 +793,21 @@ export function ReaderClient({
                 <NavZone side="left" onClick={prev} />
                 <NavZone side="right" onClick={next} />
               </>
+            )}
+
+            {/* End-of-book scene: a sketched girl picks up a book and reads */}
+            {endScene && (
+              <EndScene
+                onClose={() => {
+                  endDismissedRef.current = true;
+                  setEndScene(false);
+                }}
+                onRestart={() => {
+                  endDismissedRef.current = true;
+                  setEndScene(false);
+                  renditionRef.current?.display?.();
+                }}
+              />
             )}
           </>
         )}

@@ -8,7 +8,8 @@ const FONT_OPTIONS = [
   { id: "sans", label: "Sans" },
   { id: "dyslexic", label: "Dyslexic" },
   { id: "oldstyle", label: "1700s print" },
-  { id: "cursive", label: "Handwritten" },
+  { id: "cursive", label: "Quill cursive" },
+  { id: "handwritten", label: "Handwritten" },
 ];
 
 export function SettingsPanel({

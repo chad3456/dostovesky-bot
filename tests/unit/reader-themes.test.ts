@@ -66,6 +66,19 @@ describe("buildEpubThemeRules", () => {
     expect(rules["p:first-of-type::first-letter"]).toBeTruthy();
   });
 
+  it("applies the casual handwritten marker font with a legibility scale", () => {
+    const rules = buildEpubThemeRules({
+      themeId: "light",
+      fontFamily: "handwritten",
+      fontSize: 20,
+      lineHeight: 1.6,
+      justify: false,
+    });
+    expect(rules.body["font-family"]).toContain("Gochi Hand");
+    // 20 × 1.15 = 23px
+    expect(rules.body["font-size"]).toContain("23px");
+  });
+
   it("scales up small cursive type for legibility", () => {
     const rules = buildEpubThemeRules({
       themeId: "vintage",
