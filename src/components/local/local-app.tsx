@@ -134,6 +134,13 @@ export function LocalApp() {
           />
           <div className="flex items-center gap-2">
             <a
+              href="/notes"
+              className="rounded-full border border-parchment-border px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-parchment-light"
+              title="Browse all your highlights and notes"
+            >
+              🗒 Notes
+            </a>
+            <a
               href="/login"
               className="hidden rounded-full border border-parchment-border px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-parchment-light sm:inline-block"
               title="Sync your library across devices with a sync code"

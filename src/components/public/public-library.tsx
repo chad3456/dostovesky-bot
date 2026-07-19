@@ -121,14 +121,23 @@ export function PublicLibrary() {
             onChange={(e) => e.target.files && upload(e.target.files)}
             data-testid="file-input"
           />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
-          >
-            {uploading ? "Adding…" : "＋ Upload EPUB"}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/notes"
+              className="rounded-full border border-parchment-border px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-parchment-light"
+              title="Browse all your highlights and notes"
+            >
+              🗒 Notes
+            </Link>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
+            >
+              {uploading ? "Adding…" : "＋ Upload EPUB"}
+            </button>
+          </div>
         </div>
       </header>
 
