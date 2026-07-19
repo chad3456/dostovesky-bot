@@ -34,8 +34,21 @@ run("prisma generate");
 
 if (migrateUrl) {
   console.log("Database detected — applying migrations.");
-  // Prisma's schema reads env("DATABASE_URL"); point it at the resolved URL.
-  run("prisma migrate deploy", { DATABASE_URL: migrateUrl });
+  try {
+    // Prisma's schema reads env("DATABASE_URL"); point it at the resolved URL.
+    run("prisma migrate deploy", { DATABASE_URL: migrateUrl });
+  } catch (err) {
+    // A build container sometimes can't reach the database even though the
+    // runtime can. Don't brick the whole deploy: warn loudly and continue.
+    // Set STRICT_DB_MIGRATIONS=true to make migration failures fatal.
+    if (process.env.STRICT_DB_MIGRATIONS === "true") throw err;
+    console.warn(
+      "\n⚠️  prisma migrate deploy FAILED — continuing the build anyway.\n" +
+        "   Database-backed features may error until migrations are applied.\n" +
+        "   Run `pnpm prisma migrate deploy` against your database, or set\n" +
+        "   STRICT_DB_MIGRATIONS=true to fail builds on migration errors.\n",
+    );
+  }
 } else {
   console.log("No database configured — skipping migrations (client-only deploy).");
 }
