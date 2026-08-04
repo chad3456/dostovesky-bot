@@ -1,75 +1,89 @@
 # EpubCast
 
 Upload an EPUB and get a podcast: two hosts discuss the book **one chapter per
-episode**, weaving in how that book and its themes are actually discussed
-across the internet. Episodes unlock in order — finish one to open the next.
+episode**. Episodes unlock in order — finish one to open the next.
 
 Open it at **`/epubcast`**.
 
-## How an episode is made
+## Free by default — nothing to pay, nothing to sign up for
 
-Each episode is generated in **five short steps**, one model turn per HTTP
-request, so no single request runs long enough to hit a serverless timeout:
+The default engine costs **£0 / $0**. There is no API key, no account, and no
+per-episode billing anywhere in the default path:
 
-| Step | What happens |
-|---|---|
-| 1 | **Research** — Claude runs Anthropic's server-side **web search** over how this book/chapter is discussed (criticism, essays, recurring reader debates, context) and writes a briefing. Sources are kept and shown under the episode. |
-| 2–5 | **Script** — four dialogue segments (open → close reading → the wider online conversation → themes and close), each continuing from the last. |
+- **The script** is composed on your own server from the chapter's own text —
+  its quotable passages, recurring names and themes — plus background from
+  **keyless public APIs**: Wikipedia, Wikiquote, Open Library and Project
+  Gutenberg. All four are free and need no registration.
+- **The audio** is your browser's built-in speech engine, with a contrasting
+  voice per host. No TTS service, no audio bill.
 
-The four segments target ~900 spoken words each ≈ **3,600 words ≈ 24 minutes**
-at a 150 wpm conversational rate, which lands inside the 20–25 minute goal.
-There's a unit test asserting that arithmetic so the target can't silently drift.
+A full 25-minute episode generates in about a second.
 
-**The hosts:** *Nora* (literary analyst — close reading, craft, tradition) and
-*Julian* (curious co-host — reacts as a smart first-time reader, pushes back,
-brings in what people say online).
+**The honest trade-off:** the free engine writes a *structured, well-informed
+discussion*, not a spontaneous one. It quotes the chapter accurately, follows
+its themes, and cites real sources — but its connective phrasing comes from a
+library of craft observations rather than being written fresh, so across a
+25-minute episode a stock line may recur a few times. It is genuinely
+listenable; it is not a human podcast, and it isn't pretending to be.
 
-## Setup
+## Optional: the hosted Claude engine
 
-Generation calls the Claude API, so it needs a key:
+Better prose, at a real cost — so it is **strictly opt-in and cannot switch on
+by accident**. It requires *both*:
 
 ```bash
+EPUBCAST_ENGINE=claude
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-On Vercel: **Settings → Environment Variables → Production**, then redeploy.
-Uploading, browsing and listening all work without a key — only *recording* an
-episode needs it. The UI says so explicitly instead of failing mysteriously.
+Setting only the key changes nothing; the free engine keeps running. Rough cost
+when enabled: **$0.50–$1.50 per episode** on `claude-opus-5` pricing. That path
+uses adaptive thinking, `effort: "high"`, Anthropic's server-side web search,
+streaming, and a refusal fallback to `claude-opus-4-8` (skipped gracefully if
+the beta isn't enabled on the account).
 
-Model: **`claude-opus-5`** with adaptive thinking and `effort: "high"`. Requests
-stream (so long generations can't hit an HTTP timeout), resume server-tool
-`pause_turn`s, and carry a server-side refusal fallback to `claude-opus-4-8` —
-if that beta isn't enabled on the account, the call is retried without it rather
-than failing the episode.
+The UI always states which engine is active, so you can see at a glance whether
+anything is being billed.
+
+## How an episode is built
+
+Both engines run the same five steps, **one step per HTTP request**, so no
+single request runs long enough to hit a serverless timeout:
+
+| Step | What happens |
+|---|---|
+| 1 | **Research** — background on the book and its themes; sources are stored and shown under the episode. |
+| 2–5 | **Script** — four segments: open → close reading → the wider conversation → themes and close. |
+
+Four segments of ~900 spoken words ≈ **3,600 words ≈ 24 minutes** at 150 wpm,
+landing the 20–25 minute goal. A unit test asserts that arithmetic, and the free
+composer keeps producing beats until the budget is met — so it hits the target
+rather than hoping to.
+
+**The hosts:** *Nora* (literary analyst — close reading, craft, tradition) and
+*Julian* (curious co-host — reacts as a smart first-time reader and pushes back).
 
 ## Playback
 
-Audio uses the browser's built-in speech engine, so there's **no audio bill and
-no extra key**. Each host gets a contrasting voice (female for Nora, male for
-Julian, auto-picked from the device and overridable per host, remembered
-locally). The transcript follows along, highlights the live line, and any line
-can be clicked to jump there. Reaching the end marks the episode listened and
-unlocks the next chapter.
+Each host gets a contrasting voice, auto-picked from the device (female for
+Nora, male for Julian), overridable per host and remembered locally. The
+transcript follows along, highlights the live line, and any line can be clicked
+to jump there. Reaching the end marks the episode listened and unlocks the next
+chapter.
 
-Voice quality is the device's, not ours: excellent on iOS/macOS, good on
-Android, more synthetic on some Windows machines.
-
-## Cost
-
-Roughly **$0.50–$1.50 per episode** on Opus 5 pricing ($5/$25 per million input/
-output tokens), depending on chapter length and how much the research step
-searches. A 30-chapter book generated end to end is therefore tens of dollars —
-which is exactly why episodes are generated **on demand, one at a time**, rather
-than the whole book at upload.
+Voice quality is the device's: excellent on iOS/macOS, good on Android, more
+synthetic on some Windows machines.
 
 ## Notes and limits
 
-- Front matter, covers and other very short sections are filtered out
-  (<220 words), so episodes map to real chapters. Books are capped at 60
-  episodes per upload.
+- Front matter and covers are filtered out (<220 words), so episodes map to real
+  chapters. Books cap at 60 episodes per upload.
 - Chapter text is stored with the episode at upload, so generation never
   re-parses the EPUB.
-- A failed generation stores its error on the episode and shows a **Retry**
-  button; completed segments are kept, so a retry resumes rather than restarts.
-- The prompt forbids inventing quotes, facts or sources, and tells the hosts to
-  say so plainly when the web turns up little about a specific book.
+- A failed generation stores its error and offers **Retry**; finished segments
+  are kept, so a retry resumes rather than restarts.
+- Research is best-effort: if the network is unavailable, every source is
+  skipped and the episode still generates, with the hosts saying plainly that
+  they found little published commentary rather than inventing any.
+- Locked episodes are refused **server-side** (403) for both reading and
+  generating — not merely hidden in the UI.

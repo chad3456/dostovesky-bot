@@ -20,7 +20,7 @@ export function EpubcastApp() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [keyConfigured, setKeyConfigured] = useState(true);
+  const [engine, setEngine] = useState<"free" | "claude">("free");
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -28,10 +28,10 @@ export function EpubcastApp() {
     try {
       const d = await api<{
         podcasts: PodcastSummary[];
-        apiKeyConfigured: boolean;
+        engine: "free" | "claude";
       }>("/api/epubcast");
       setPodcasts(d.podcasts);
-      setKeyConfigured(d.apiKeyConfigured);
+      setEngine(d.engine);
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : "Couldn't load your podcasts.");
     } finally {
@@ -134,14 +134,21 @@ export function EpubcastApp() {
           {uploading ? "Reading the book…" : "Upload an EPUB"}
         </button>
 
-        {!keyConfigured && (
-          <p className="mx-auto mt-6 max-w-lg rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <strong>Set an API key to generate episodes.</strong> Add{" "}
-            <code className="font-mono">ANTHROPIC_API_KEY</code> to your
-            environment — uploading and browsing work without it, but writing an
-            episode calls Claude.
-          </p>
-        )}
+        <p className="mx-auto mt-6 max-w-lg text-xs text-ink-soft">
+          {engine === "free" ? (
+            <>
+              <strong className="text-brand-800">Free mode.</strong> Episodes are
+              written on your own server from the book plus open sources
+              (Wikipedia, Wikiquote, Open Library, Project Gutenberg), and read
+              aloud by your browser. No API key, no per-episode cost.
+            </>
+          ) : (
+            <>
+              <strong className="text-brand-800">Claude mode.</strong> Episodes
+              are written by claude-opus-5 and billed to your Anthropic account.
+            </>
+          )}
+        </p>
         {err && (
           <p role="alert" className="mt-5 text-sm text-rose-700">
             {err}

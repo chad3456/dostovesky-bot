@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { handle, json, error } from "@/lib/api";
 import { parseEpubMetadata, extractEpubChapters } from "@/lib/epub";
 import { saveBookFile } from "@/lib/storage";
-import { hasApiKey } from "@/lib/epubcast/generate";
+import { activeEngine } from "@/lib/epubcast/engine";
 import { SEGMENT_COUNT } from "@/lib/epubcast/script";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ export async function GET() {
       },
     });
     return json({
-      apiKeyConfigured: hasApiKey(),
+      engine: activeEngine(),
       podcasts: podcasts.map(({ episodes, ...p }) => ({
         ...p,
         readyCount: episodes.filter((e) => e.status === "ready").length,
@@ -94,6 +94,6 @@ export async function POST(req: NextRequest) {
       select: { id: true, title: true, author: true, totalChapters: true },
     });
 
-    return json({ podcast, apiKeyConfigured: hasApiKey() }, { status: 201 });
+    return json({ podcast, engine: activeEngine() }, { status: 201 });
   });
 }

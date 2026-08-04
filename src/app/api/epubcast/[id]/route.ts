@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { handle, json, error } from "@/lib/api";
-import { hasApiKey } from "@/lib/epubcast/generate";
+import { activeEngine } from "@/lib/epubcast/engine";
 import { estimateSeconds } from "@/lib/epubcast/script";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,7 @@ export async function GET(_req: Request, { params }: Params) {
     if (!podcast) return error("Podcast not found.", 404);
 
     return json({
-      apiKeyConfigured: hasApiKey(),
+      engine: activeEngine(),
       podcast: {
         ...podcast,
         episodes: podcast.episodes.map((e) => ({

@@ -36,7 +36,7 @@ interface FullEpisode extends EpisodeRow {
 
 export function PodcastDetail({ podcastId }: { podcastId: string }) {
   const [podcast, setPodcast] = useState<PodcastData | null>(null);
-  const [keyConfigured, setKeyConfigured] = useState(true);
+  const [engine, setEngine] = useState<"free" | "claude">("free");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -47,11 +47,11 @@ export function PodcastDetail({ podcastId }: { podcastId: string }) {
 
   const load = useCallback(async () => {
     try {
-      const d = await api<{ podcast: PodcastData; apiKeyConfigured: boolean }>(
+      const d = await api<{ podcast: PodcastData; engine: "free" | "claude" }>(
         `/api/epubcast/${podcastId}`,
       );
       setPodcast(d.podcast);
-      setKeyConfigured(d.apiKeyConfigured);
+      setEngine(d.engine);
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : "Couldn't load this show.");
     } finally {
@@ -170,12 +170,11 @@ export function PodcastDetail({ podcastId }: { podcastId: string }) {
           {podcast.totalChapters} episodes · unlocked one chapter at a time
         </p>
 
-        {!keyConfigured && (
-          <p className="mt-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Set <code className="font-mono">ANTHROPIC_API_KEY</code> to record
-            episodes.
-          </p>
-        )}
+        <p className="mt-2 text-xs text-ink-soft">
+          {engine === "free"
+            ? "Free mode — written locally from the book and open sources, at no cost."
+            : "Claude mode — episodes are billed to your Anthropic account."}
+        </p>
         {err && (
           <p role="alert" className="mt-5 rounded-lg bg-rose-50 px-4 py-2 text-sm text-rose-700">
             {err}
@@ -228,7 +227,7 @@ export function PodcastDetail({ podcastId }: { podcastId: string }) {
                     <button
                       type="button"
                       onClick={() => generate(e.id)}
-                      disabled={busy || !keyConfigured}
+                      disabled={busy}
                       className="rounded-full border border-brand-700/40 px-4 py-2 text-sm font-semibold text-brand-800 transition hover:bg-brand-700/5 disabled:opacity-50"
                     >
                       {busy

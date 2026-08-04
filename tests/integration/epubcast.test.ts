@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // No auth anywhere in EpubCast; keep the import chain off real next-auth.
 vi.mock("@/lib/auth", () => ({ auth: async () => null }));
@@ -83,6 +83,14 @@ beforeEach(async () => {
   await prisma.episode.deleteMany();
   await prisma.podcast.deleteMany();
   fake.fail = false;
+  // These cases exercise the opt-in hosted engine; free mode is the default.
+  process.env.EPUBCAST_ENGINE = "claude";
+  process.env.ANTHROPIC_API_KEY = "sk-ant-test";
+});
+
+afterEach(() => {
+  delete process.env.EPUBCAST_ENGINE;
+  delete process.env.ANTHROPIC_API_KEY;
 });
 
 describe("EpubCast upload", () => {

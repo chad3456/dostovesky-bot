@@ -4,14 +4,24 @@ import {
   researchChapter,
   MissingApiKeyError,
 } from "@/lib/epubcast/generate";
+import { activeEngine } from "@/lib/epubcast/engine";
+import { freeResearch, type ResearchFact } from "@/lib/epubcast/free-research";
+import { composeSegment } from "@/lib/epubcast/free-script";
 import {
   SEGMENT_COUNT,
+  WORDS_PER_SEGMENT,
   countWords,
   estimateSeconds,
   parseDialogue,
   type DialogueTurn,
   type Research,
 } from "@/lib/epubcast/script";
+
+/** Research plus the extra material the free composer uses. */
+type StoredResearch = Research & {
+  facts: ResearchFact[];
+  quotes: { text: string; url?: string }[];
+};
 
 export interface StepResult {
   status: string;
@@ -35,16 +45,19 @@ function readScript(raw: string | null): DialogueTurn[] {
   }
 }
 
-function readResearch(raw: string | null): Research {
-  if (!raw) return { brief: "", sources: [] };
+function readResearch(raw: string | null): StoredResearch {
+  const empty: StoredResearch = { brief: "", sources: [], facts: [], quotes: [] };
+  if (!raw) return empty;
   try {
     const parsed = JSON.parse(raw);
     return {
       brief: typeof parsed?.brief === "string" ? parsed.brief : "",
       sources: Array.isArray(parsed?.sources) ? parsed.sources : [],
+      facts: Array.isArray(parsed?.facts) ? parsed.facts : [],
+      quotes: Array.isArray(parsed?.quotes) ? parsed.quotes : [],
     };
   } catch {
-    return { brief: "", sources: [] };
+    return empty;
   }
 }
 
@@ -64,7 +77,7 @@ export async function advanceEpisode(episodeId: string): Promise<StepResult> {
   const episode = await prisma.episode.findUnique({
     where: { id: episodeId },
     include: {
-      podcast: { select: { title: true, author: true } },
+      podcast: { select: { title: true, author: true, totalChapters: true } },
     },
   });
   if (!episode) throw new Error("Episode not found.");
@@ -79,12 +92,19 @@ export async function advanceEpisode(episodeId: string): Promise<StepResult> {
         where: { id: episodeId },
         data: { status: "researching", error: null },
       });
-      const research = await researchChapter({
-        bookTitle: episode.podcast.title,
-        author: episode.podcast.author,
-        chapterTitle: episode.chapterTitle,
-        chapterText: episode.chapterText,
-      });
+      const research =
+        activeEngine() === "free"
+          ? await freeResearch({
+              bookTitle: episode.podcast.title,
+              author: episode.podcast.author,
+              chapterTitle: episode.chapterTitle,
+            })
+          : await researchChapter({
+              bookTitle: episode.podcast.title,
+              author: episode.podcast.author,
+              chapterTitle: episode.chapterTitle,
+              chapterText: episode.chapterText,
+            });
       await prisma.episode.update({
         where: { id: episodeId },
         data: {
@@ -111,16 +131,30 @@ export async function advanceEpisode(episodeId: string): Promise<StepResult> {
       });
 
       const research = readResearch(episode.research);
-      const fresh = await generateSegment({
-        bookTitle: episode.podcast.title,
-        author: episode.podcast.author,
-        chapterTitle: episode.chapterTitle,
-        chapterNumber: episode.chapterIndex + 1,
-        chapterText: episode.chapterText,
-        research,
-        segmentIndex: episode.segmentsDone,
-        previousTurns: turns,
-      });
+      const fresh =
+        activeEngine() === "free"
+          ? composeSegment({
+              bookTitle: episode.podcast.title,
+              author: episode.podcast.author,
+              chapterTitle: episode.chapterTitle,
+              chapterNumber: episode.chapterIndex + 1,
+              totalChapters: episode.podcast.totalChapters,
+              chapterText: episode.chapterText,
+              facts: research.facts,
+              researchQuotes: research.quotes,
+              segmentIndex: episode.segmentsDone,
+              targetWords: WORDS_PER_SEGMENT,
+            })
+          : await generateSegment({
+              bookTitle: episode.podcast.title,
+              author: episode.podcast.author,
+              chapterTitle: episode.chapterTitle,
+              chapterNumber: episode.chapterIndex + 1,
+              chapterText: episode.chapterText,
+              research,
+              segmentIndex: episode.segmentsDone,
+              previousTurns: turns,
+            });
 
       if (!fresh.length) {
         throw new Error("The model returned no usable dialogue for this segment.");
