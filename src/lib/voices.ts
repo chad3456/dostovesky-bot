@@ -83,3 +83,39 @@ export function sortVoicesForPicker<T extends VoiceLike>(
     return a.name.localeCompare(b.name);
   });
 }
+
+// Common male voice names across macOS/iOS, Android and Windows.
+const MALE_NAMES = [
+  "daniel", "alex", "fred", "tom", "aaron", "arthur", "gordon", "oliver",
+  "rishi", "david", "mark", "george", "james", "guy", "ryan", "matthew",
+  "thomas", "diego", "jorge", "juan", "luca", "male", "man",
+];
+
+export function isLikelyMale(voice: VoiceLike): boolean {
+  const name = lc(voice.name);
+  if (isLikelyFemale(voice)) return false;
+  return MALE_NAMES.some((n) => name.includes(n));
+}
+
+/**
+ * Pick a contrasting pair of voices for the two podcast hosts: a female voice
+ * for host A and a male voice for host B, both in the reader's language where
+ * possible. Falls back to any two distinct voices, then to one voice for both.
+ */
+export function pickHostVoices(
+  voices: VoiceLike[],
+  lang = "en",
+): { a: string | null; b: string | null } {
+  if (!voices.length) return { a: null, b: null };
+  const short = lc(lang).slice(0, 2);
+  const inLang = voices.filter((v) => lc(v.lang).startsWith(short));
+  const pool = inLang.length ? inLang : voices;
+
+  const a = pickDefaultVoice(pool, lang);
+  const male = pool.find((v) => isLikelyMale(v) && v.voiceURI !== a);
+  if (male) return { a, b: male.voiceURI };
+
+  // No identifiable male voice — use any other distinct voice.
+  const other = pool.find((v) => v.voiceURI !== a);
+  return { a, b: other ? other.voiceURI : a };
+}

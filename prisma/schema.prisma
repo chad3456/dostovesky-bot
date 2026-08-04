@@ -185,3 +185,48 @@ model ShareLink {
 
   @@index([bookId])
 }
+
+// ─── EpubCast: AI-generated two-host podcast episodes, one per chapter ───
+
+model Podcast {
+  id            String    @id @default(cuid())
+  title         String
+  author        String?
+  cover         String?
+  /// Storage reference for the uploaded EPUB (Blob URL, db:<id>, or disk path).
+  filePath      String
+  totalChapters Int
+  createdAt     DateTime  @default(now())
+  episodes      Episode[]
+
+  @@index([createdAt])
+}
+
+model Episode {
+  id           String   @id @default(cuid())
+  podcastId    String
+  podcast      Podcast  @relation(fields: [podcastId], references: [id], onDelete: Cascade)
+  chapterIndex Int
+  chapterTitle String
+  /// Chapter prose, stored at import so generation never re-parses the EPUB.
+  chapterText  String
+  /// locked | pending | researching | scripting | ready | failed
+  status       String   @default("locked")
+  /// Episodes unlock one at a time, in order.
+  unlocked     Boolean  @default(false)
+  listened     Boolean  @default(false)
+  /// Segment-by-segment generation progress (keeps each request short).
+  segmentsDone Int      @default(0)
+  segmentsTotal Int     @default(4)
+  /// JSON: { brief, sources[] } from the web-research pass.
+  research     String?
+  /// JSON: DialogueTurn[] — the finished script.
+  script       String?
+  wordCount    Int      @default(0)
+  error        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([podcastId, chapterIndex])
+  @@index([podcastId])
+}

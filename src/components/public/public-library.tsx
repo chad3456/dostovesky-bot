@@ -123,6 +123,13 @@ export function PublicLibrary() {
           />
           <div className="flex items-center gap-2">
             <Link
+              href="/epubcast"
+              className="rounded-full border border-parchment-border px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-parchment-light"
+              title="Turn a book into a two-host podcast"
+            >
+              🎙️ EpubCast
+            </Link>
+            <Link
               href="/notes"
               className="rounded-full border border-parchment-border px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-parchment-light"
               title="Browse all your highlights and notes"
