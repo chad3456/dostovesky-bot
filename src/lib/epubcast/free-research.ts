@@ -32,9 +32,18 @@ async function getJson(url: string): Promise<any | null> {
       headers: { "User-Agent": UA, Accept: "application/json" },
     });
     if (!res.ok) return null;
-    return await res.json();
+
+    // Captive portals, corporate proxies and egress filters happily answer 200
+    // with an HTML or plain-text error page. Treat anything that isn't JSON as
+    // "no result" rather than letting a parse error escape.
+    const type = res.headers?.get?.("content-type") ?? "";
+    if (type && !/json/i.test(type)) return null;
+
+    const body = await res.text();
+    if (!body.trim().startsWith("{") && !body.trim().startsWith("[")) return null;
+    return JSON.parse(body);
   } catch {
-    return null; // offline, blocked, rate-limited — all non-fatal
+    return null; // offline, blocked, rate-limited, malformed — all non-fatal
   } finally {
     clearTimeout(timer);
   }

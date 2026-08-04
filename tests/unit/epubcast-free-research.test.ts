@@ -9,12 +9,28 @@ afterEach(() => {
   delete process.env.ANTHROPIC_API_KEY;
 });
 
+function jsonResponse(body: unknown) {
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: () => "application/json" },
+    text: async () => JSON.stringify(body),
+  } as unknown as Response;
+}
+
 function mockFetch(routes: Record<string, unknown>) {
   global.fetch = vi.fn(async (url: RequestInfo | URL) => {
     const u = String(url);
     const key = Object.keys(routes).find((k) => u.includes(k));
-    if (!key) return { ok: false, status: 404, json: async () => ({}) } as Response;
-    return { ok: true, status: 200, json: async () => routes[key] } as Response;
+    if (!key) {
+      return {
+        ok: false,
+        status: 404,
+        headers: { get: () => "application/json" },
+        text: async () => "{}",
+      } as unknown as Response;
+    }
+    return jsonResponse(routes[key]);
   }) as unknown as typeof fetch;
 }
 
