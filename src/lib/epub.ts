@@ -170,3 +170,114 @@ async function resolveCover(
     (coverItem?.["@_media-type"] as string) || mimeFromName(coverPath);
   return `data:${mime};base64,${data.toString("base64")}`;
 }
+
+export interface EpubChapter {
+  /** 0-based position in the reading order. */
+  index: number;
+  title: string;
+  /** Plain text with markup, scripts and styles stripped. */
+  text: string;
+  wordCount: number;
+}
+
+/** Strip XHTML to readable plain text. */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<\/(p|div|h[1-6]|li|br|section|blockquote)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&(?:quot|#34);/gi, '"')
+    .replace(/&(?:apos|#39);/gi, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/[ \t ]+/g, " ")
+    .replace(/\n\s*\n\s*\n+/g, "\n\n")
+    .split("\n")
+    .map((l) => l.trim())
+    .join("\n")
+    .trim();
+}
+
+/** First heading in the document, if any — used as the chapter title. */
+function headingOf(html: string): string | null {
+  const m = html.match(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/i);
+  if (!m) return null;
+  const t = htmlToText(m[1]).replace(/\s+/g, " ").trim();
+  return t ? t.slice(0, 120) : null;
+}
+
+/** Chapters shorter than this are treated as front/back matter and dropped. */
+const MIN_CHAPTER_WORDS = 220;
+
+/**
+ * Extract the readable chapters of an EPUB in spine (reading) order.
+ * Front matter, covers and other very short sections are filtered out so
+ * episodes map to substantive chapters.
+ */
+export async function extractEpubChapters(
+  buffer: Buffer,
+): Promise<EpubChapter[]> {
+  let zip: JSZip;
+  try {
+    zip = await JSZip.loadAsync(buffer);
+  } catch {
+    throw new Error("File is not a valid ZIP/EPUB archive.");
+  }
+
+  const containerFile = zip.file("META-INF/container.xml");
+  if (!containerFile) throw new Error("Invalid EPUB: missing container.xml.");
+  const container = xml.parse(await containerFile.async("string"));
+  const opfPath: string | undefined = asArray(
+    container?.container?.rootfiles?.rootfile,
+  )[0]?.["@_full-path"];
+  if (!opfPath) throw new Error("Invalid EPUB: no OPF rootfile declared.");
+
+  const opfFile = zip.file(opfPath);
+  if (!opfFile) throw new Error("Invalid EPUB: OPF file not found.");
+  const pkg = xml.parse(await opfFile.async("string"))?.package;
+  if (!pkg) throw new Error("Invalid EPUB: malformed OPF package.");
+
+  const opfDir = dirname(opfPath);
+  const manifest = new Map<string, string>();
+  for (const item of asArray(pkg?.manifest?.item)) {
+    const id = item?.["@_id"];
+    const href = item?.["@_href"];
+    const type = item?.["@_media-type"] ?? "";
+    if (id && href && /xhtml|html|xml/.test(type)) {
+      manifest.set(String(id), String(href));
+    }
+  }
+
+  const chapters: EpubChapter[] = [];
+  for (const ref of asArray(pkg?.spine?.itemref)) {
+    const idref = ref?.["@_idref"];
+    if (!idref) continue;
+    const href = manifest.get(String(idref));
+    if (!href) continue;
+
+    const file = zip.file(joinPath(opfDir, decodeURIComponent(href.split("#")[0])));
+    if (!file) continue;
+
+    const html = await file.async("string");
+    const text = htmlToText(html);
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    if (wordCount < MIN_CHAPTER_WORDS) continue;
+
+    chapters.push({
+      index: chapters.length,
+      title: headingOf(html) || `Chapter ${chapters.length + 1}`,
+      text,
+      wordCount,
+    });
+  }
+
+  if (!chapters.length) {
+    throw new Error("No readable chapters found in this EPUB.");
+  }
+  return chapters;
+}

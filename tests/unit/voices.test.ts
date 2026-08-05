@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   isLikelyFemale,
+  isLikelyMale,
+  pickHostVoices,
   pickDefaultVoice,
   sortVoicesForPicker,
   type VoiceLike,
@@ -55,5 +57,40 @@ describe("sortVoicesForPicker", () => {
     const sorted = sortVoicesForPicker(voices, "en").map((x) => x.name);
     expect(sorted[0]).toBe("Samantha"); // english + female first
     expect(sorted[sorted.length - 1]).toBe("Thomas"); // non-english last
+  });
+});
+
+describe("pickHostVoices", () => {
+  it("pairs a female host A with a male host B", () => {
+    const voices = [v("Samantha"), v("Daniel"), v("Thomas", "fr-FR")];
+    const { a, b } = pickHostVoices(voices, "en");
+    expect(a).toBe("Samantha-en-US");
+    expect(b).toBe("Daniel-en-US");
+  });
+
+  it("falls back to any other distinct voice when no male voice exists", () => {
+    const voices = [v("Samantha"), v("Karen", "en-AU")];
+    const { a, b } = pickHostVoices(voices, "en");
+    expect(a).toBe("Samantha-en-US");
+    expect(b).toBe("Karen-en-AU");
+    expect(a).not.toBe(b);
+  });
+
+  it("reuses the single available voice for both hosts", () => {
+    const { a, b } = pickHostVoices([v("Samantha")], "en");
+    expect(a).toBe("Samantha-en-US");
+    expect(b).toBe("Samantha-en-US");
+  });
+
+  it("returns nulls when the device has no voices", () => {
+    expect(pickHostVoices([], "en")).toEqual({ a: null, b: null });
+  });
+});
+
+describe("isLikelyMale", () => {
+  it("detects common male voice names and never double-counts female ones", () => {
+    expect(isLikelyMale(v("Daniel"))).toBe(true);
+    expect(isLikelyMale(v("Microsoft David"))).toBe(true);
+    expect(isLikelyMale(v("Samantha"))).toBe(false);
   });
 });
