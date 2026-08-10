@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 export async function resetDb() {
   // Order respects FK constraints; cascades cover most, but be explicit.
   await prisma.$transaction([
+    prisma.presence.deleteMany(),
     prisma.highlight.deleteMany(),
     prisma.readingProgress.deleteMany(),
     prisma.shareLink.deleteMany(),

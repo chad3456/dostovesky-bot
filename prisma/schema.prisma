@@ -185,3 +185,24 @@ model ShareLink {
 
   @@index([bookId])
 }
+
+// ─── Live presence: how many people are on the site right now ───
+// Anonymous heartbeat rows. A visitor is "live" while lastSeen is inside the
+// window (see src/lib/presence.ts); stale rows are pruned on write. Stored in
+// Postgres rather than memory so the count is correct across serverless
+// instances.
+model Presence {
+  id        String   @id @default(cuid())
+  /// Random per-browser token. Not tied to any account.
+  token     String   @unique
+  /// Deterministic, playful pseudonym derived from the token.
+  alias     String
+  /// browsing | reading | listening | notes
+  activity  String   @default("browsing")
+  /// Title of the book being read, when there is one.
+  bookTitle String?
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([lastSeen])
+}

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/fetcher";
+import { LivePresence } from "@/components/presence/live-presence";
 import { HIGHLIGHT_FILL } from "@/lib/reader-themes";
 import { HIGHLIGHT_COLORS } from "@/lib/validation";
 import {
@@ -173,10 +174,13 @@ export function NotesClient() {
     <main className="min-h-[100dvh]">
       <header className="border-b border-parchment-border bg-parchment-light/80 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 text-brand-800">
-            <span aria-hidden className="text-xl">📖</span>
-            <span className="font-display text-3xl leading-none">Lumen</span>
-          </Link>
+          <div className="flex min-w-0 items-center gap-3">
+            <Link href="/" className="flex items-center gap-2 text-brand-800">
+              <span aria-hidden className="text-xl">📖</span>
+              <span className="font-display text-3xl leading-none">Lumen</span>
+            </Link>
+            <LivePresence activity="notes" className="hidden md:flex" />
+          </div>
           <Link
             href="/"
             className="rounded-full border border-parchment-border px-4 py-2 text-sm font-semibold text-ink transition hover:bg-parchment-light"

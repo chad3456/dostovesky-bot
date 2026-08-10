@@ -5,6 +5,8 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api, ApiError } from "@/lib/fetcher";
 import { ReaderClient } from "@/components/reader/reader-client";
+import { usePresence } from "@/components/presence/use-presence";
+import { PresenceBadge } from "@/components/presence/live-presence";
 
 // The Marauder's-Map magic layer (GSAP + Three.js) is client-only and lazy.
 const MagicLayer = dynamic(
@@ -29,6 +31,13 @@ export function PublicLibrary() {
   const [dragging, setDragging] = useState(false);
   const [reading, setReading] = useState<PublicBook | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // A single heartbeat for the whole page. Declared before the reader takes
+  // over the screen below, so presence keeps reporting the open book.
+  const presence = usePresence(
+    reading ? "reading" : "browsing",
+    reading?.title ?? null,
+  );
 
   const refresh = useCallback(async () => {
     try {
@@ -108,9 +117,12 @@ export function PublicLibrary() {
     >
       <header className="border-b border-parchment-border bg-parchment-light/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2 text-brand-800">
-            <span aria-hidden className="text-xl">📖</span>
-            <span className="font-display text-3xl leading-none">Lumen</span>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex items-center gap-2 text-brand-800">
+              <span aria-hidden className="text-xl">📖</span>
+              <span className="font-display text-3xl leading-none">Lumen</span>
+            </div>
+            <PresenceBadge presence={presence} className="hidden md:flex" />
           </div>
           <input
             ref={inputRef}

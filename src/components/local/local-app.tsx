@@ -9,6 +9,8 @@ import {
   type LocalBook,
 } from "@/lib/local-library";
 import { ReaderClient } from "@/components/reader/reader-client";
+import { usePresence } from "@/components/presence/use-presence";
+import { PresenceBadge } from "@/components/presence/live-presence";
 
 type Reading = { book: LocalBook; data: ArrayBuffer };
 
@@ -21,6 +23,12 @@ export function LocalApp() {
   const [dragging, setDragging] = useState(false);
   const [reading, setReading] = useState<Reading | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Declared above the reader takeover so presence keeps reporting.
+  const presence = usePresence(
+    reading ? "reading" : "browsing",
+    reading?.book.title ?? null,
+  );
 
   const refresh = useCallback(async () => {
     try {
@@ -119,9 +127,12 @@ export function LocalApp() {
     >
       <header className="border-b border-parchment-border bg-parchment-light/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2 text-brand-800">
-            <span aria-hidden className="text-xl">📖</span>
-            <span className="font-display text-3xl leading-none">Lumen</span>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex items-center gap-2 text-brand-800">
+              <span aria-hidden className="text-xl">📖</span>
+              <span className="font-display text-3xl leading-none">Lumen</span>
+            </div>
+            <PresenceBadge presence={presence} className="hidden md:flex" />
           </div>
           <input
             ref={inputRef}
